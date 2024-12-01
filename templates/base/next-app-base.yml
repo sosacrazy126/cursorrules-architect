@@ -1,0 +1,114 @@
+# Modern Next.js 14 Base Structure (April 2024)
+=============================================
+
+NAME: "Next.js 14 App Router Base"
+VERSION: "14.1.0"
+TYPE: "Base Component"
+
+DIRECTORY_STRUCTURE: |
+  app/
+  ├── (auth)/                    # Auth group (placeholder for auth component)
+  │   └── __auth_component__     # Will be replaced by chosen auth solution
+  │
+  ├── api/                       # API routes group
+  │   ├── __api_component__      # Will be replaced by API components
+  │   └── route.ts              # Base API handler
+  │
+  ├── components/
+  │   ├── ui/                   # Base UI components
+  │   │   ├── button.tsx
+  │   │   ├── form.tsx
+  │   │   └── input.tsx
+  │   │
+  │   └── __component_slot__    # Component injection point
+  │
+  ├── lib/                      # Shared utilities
+  │   ├── utils.ts
+  │   └── __lib_component__     # Library injection point
+  │
+  ├── types/                    # Type definitions
+  │   └── index.d.ts
+  │
+  ├── styles/                   # Global styles
+  │   └── globals.css
+  │
+  ├── app.tsx                   # Root app component
+  ├── layout.tsx               # Root layout
+  ├── page.tsx                 # Home page
+  └── __route_component__      # Route injection point
+
+INJECTION_POINTS:
+  auth:
+    path: "app/(auth)/__auth_component__"
+    accepts:
+      - "auth-js"
+      - "clerk"
+      - "supabase-auth"
+      - "firebase-auth"
+
+  api:
+    path: "app/api/__api_component__"
+    accepts:
+      - "trpc"
+      - "rest"
+      - "graphql"
+
+  components:
+    path: "components/__component_slot__"
+    accepts:
+      - "auth-components"
+      - "payment-components"
+      - "dashboard-components"
+
+  lib:
+    path: "lib/__lib_component__"
+    accepts:
+      - "database"
+      - "storage"
+      - "analytics"
+
+  routes:
+    path: "app/__route_component__"
+    accepts:
+      - "dashboard"
+      - "settings"
+      - "profile"
+
+BASE_FILES:
+  required:
+    - next.config.mjs
+    - package.json
+    - tsconfig.json
+    - tailwind.config.ts
+    - postcss.config.js
+    - .env.local
+    - middleware.ts
+
+BASE_DEPENDENCIES:
+  framework:
+    next: "14.1.0"
+    react: "18.2.0"
+    react-dom: "18.2.0"
+    typescript: "5.4.2"
+
+  styling:
+    tailwindcss: "3.4.1"
+    autoprefixer: "10.4.18"
+    postcss: "8.4.35"
+
+  utils:
+    clsx: "2.1.0"
+    tailwind-merge: "2.2.1"
+    zod: "3.22.4"
+
+TYPESCRIPT:
+  strict: true
+  baseUrl: "."
+  paths:
+    "@/*": ["./*"]
+
+MIDDLEWARE:
+  base:
+    - headers
+    - cors
+    - compression 

@@ -1,0 +1,61 @@
+# Clerk Auth Component (April 2024)
+=================================
+
+NAME: "Clerk Authentication"
+VERSION: "5.0.0"
+TYPE: "Auth Component"
+
+INJECT_INTO:
+  - "app/(auth)/__auth_component__"
+  - "lib/__lib_component__"
+  - "components/__component_slot__"
+
+DIRECTORY_STRUCTURE: |
+  (auth)/
+  ├── sign-in/
+  │   └── [[...sign-in]]/
+  │       └── page.tsx
+  ├── sign-up/
+  │   └── [[...sign-up]]/
+  │       └── page.tsx
+  ├── sso-callback/
+  │   └── page.tsx
+  └── user/
+      └── page.tsx
+
+API_STRUCTURE: |
+  api/clerk/
+  ├── webhook/
+  │   └── route.ts
+  └── user/
+      └── route.ts
+
+COMPONENT_STRUCTURE: |
+  components/auth/
+  ├── auth-button.tsx
+  ├── user-button.tsx
+  ├── org-switcher.tsx
+  └── protected.tsx
+
+LIB_STRUCTURE: |
+  lib/clerk/
+  ├── config.ts
+  ├── actions.ts
+  └── utils.ts
+
+DEPENDENCIES:
+  required:
+    "@clerk/nextjs": "5.0.0"
+    "@clerk/themes": "1.7.9"
+  optional:
+    "@clerk/localizations": "1.26.13"
+
+ENV_VARS:
+  required:
+    - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    - CLERK_SECRET_KEY
+  optional:
+    - NEXT_PUBLIC_CLERK_SIGN_IN_URL
+    - NEXT_PUBLIC_CLERK_SIGN_UP_URL
+    - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
+    - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL 

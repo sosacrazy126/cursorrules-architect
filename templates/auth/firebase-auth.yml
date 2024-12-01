@@ -1,0 +1,58 @@
+# Firebase Auth Component (April 2024)
+===================================
+
+NAME: "Firebase Authentication"
+VERSION: "10.8.0"
+TYPE: "Auth Component"
+
+INJECT_INTO:
+  - "app/(auth)/__auth_component__"
+  - "lib/__lib_component__"
+  - "components/__component_slot__"
+
+DIRECTORY_STRUCTURE: |
+  (auth)/
+  ├── signin/
+  │   └── page.tsx
+  ├── signup/
+  │   └── page.tsx
+  ├── verify/
+  │   └── page.tsx
+  └── reset/
+      └── page.tsx
+
+API_STRUCTURE: |
+  api/auth/
+  ├── session/
+  │   └── route.ts
+  └── token/
+      └── route.ts
+
+COMPONENT_STRUCTURE: |
+  components/auth/
+  ├── auth-form.tsx
+  ├── provider-buttons.tsx
+  ├── user-profile.tsx
+  └── protected-route.tsx
+
+LIB_STRUCTURE: |
+  lib/firebase/
+  ├── config.ts
+  ├── auth.ts
+  ├── admin.ts
+  └── client.ts
+
+DEPENDENCIES:
+  required:
+    "firebase": "10.8.0"
+    "firebase-admin": "12.0.0"
+  optional:
+    "reactfire": "4.2.3"
+
+ENV_VARS:
+  required:
+    - NEXT_PUBLIC_FIREBASE_API_KEY
+    - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    - NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    - FIREBASE_ADMIN_CLIENT_EMAIL
+    - FIREBASE_ADMIN_PRIVATE_KEY 

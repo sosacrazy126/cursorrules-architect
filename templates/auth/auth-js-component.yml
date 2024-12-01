@@ -1,0 +1,46 @@
+# Auth.js Component (April 2024)
+==============================
+
+NAME: "Auth.js Integration"
+VERSION: "5.0.0"
+TYPE: "Auth Component"
+
+INJECT_INTO:
+  - "app/(auth)/__auth_component__"
+  - "lib/__lib_component__"
+  - "components/__component_slot__"
+
+DIRECTORY_STRUCTURE: |
+  (auth)/
+  ├── login/
+  │   └── page.tsx
+  ├── register/
+  │   └── page.tsx
+  ├── forgot-password/
+  │   └── page.tsx
+  └── verify/
+      └── page.tsx
+
+API_STRUCTURE: |
+  api/auth/
+  ├── [...nextauth]/
+  │   └── route.ts
+  ├── verify/
+  │   └── route.ts
+  └── reset/
+      └── route.ts
+
+COMPONENT_STRUCTURE: |
+  components/auth/
+  ├── login-form.tsx
+  ├── register-form.tsx
+  ├── password-reset.tsx
+  ├── oauth-buttons.tsx
+  └── user-menu.tsx
+
+LIB_STRUCTURE: |
+  lib/auth/
+  ├── config.ts
+  ├── providers.ts
+  ├── session.ts
+  └── utils.ts 

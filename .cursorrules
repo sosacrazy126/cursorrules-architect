@@ -1,0 +1,38 @@
+<!-- BEGIN_STRUCTURE -->
+# Project Directory Structure
+------------------------------
+File Type Key:
+------------
+🐍 : Python
+📁 : Directory
+📄 : Text file
+📝 : Markdown
+📦 : Package file
+🔒 : Environment file
+
+```
+├── 📁 agents
+│   ├── 🐍 dependency_analyzer_agent.py
+│   └── 🐍 project_architect_agent.py
+├── 📁 architects
+│   ├── 🐍 monitoring-cursorrules.py
+│   ├── 🐍 project_doc_generator.py
+│   └── 🐍 project_extractor.py
+├── 📁 our-notes
+│   ├── 📁 cursorrules-examples
+│   │   ├── 📄 .cursorrules - backend
+│   │   ├── 📄 .cursorrules - Backend w: Tree
+│   │   ├── 📄 .cursorrules - Build Frontend.txt
+│   │   ├── 📄 .cursorrules - Frontendv2
+│   │   ├── 📄 .cursorrules - Full Stack_2
+│   │   ├── 📄 .cursorrules - Pt.2 Fix Errors
+│   │   └── 📄 .cursorrules - review
+│   └── 📄 ai_model_flow.txt
+├── 📁 utils
+│   └── 🐍 project_doc_generator.py
+├── 🔒 .env
+├── 📝 CONTRIBUTING.md
+├── 📝 README.md
+└── 📦 requirements.txt
+```
+<!-- END_STRUCTURE -->

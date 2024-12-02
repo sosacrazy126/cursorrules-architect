@@ -111,7 +111,7 @@ We welcome feature suggestions! Please open an issue with:
 2. **Clone Your Fork**:
 
    ```bash
-   git clone https://github.com/your-username/cursorrules-architect.git
+   git clone https://github.com/SlyyCooper/cursorrules-architect.git
    cd cursorrules-architect
    ```
 

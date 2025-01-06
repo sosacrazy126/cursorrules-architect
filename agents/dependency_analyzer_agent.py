@@ -71,7 +71,7 @@ class ClaudeAnalyzer:
         return analysis_results
 
     def analyze_dependencies(self, file_path: str) -> dict:
-        """Analyze package.json or requirements.txt with Claude-3 and return the analysis."""
+        """Analyze package.json or requirements.txt with Claude-3-5-sonnet-20241022 and return the analysis."""
         try:
             # Read the file
             with open(file_path, 'r') as f:
@@ -117,14 +117,14 @@ class ClaudeAnalyzer:
 }"""
                 prompt = f"Extract and analyze version information from this requirements.txt:\n\n{file_content}"
 
-            self.console.print(f"\n[bold blue]Starting analysis with Claude-3 for {Path(file_path).name}...[/bold blue]")
+            self.console.print(f"\n[bold blue]Starting analysis with Claude-3-5-sonnet-20241022 for {Path(file_path).name}...[/bold blue]")
             
             # Initialize response accumulator
             full_response = ""
             current_content = ""
             
             # Create a live display for the streaming output
-            with Live(Panel("Analyzing...", title="Claude-3 Analysis", border_style="blue"), refresh_per_second=4) as live:
+            with Live(Panel("Analyzing...", title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"), refresh_per_second=4) as live:
                 with self.client.messages.stream(
                     max_tokens=1024,
                     messages=[{
@@ -137,7 +137,7 @@ class ClaudeAnalyzer:
                 ) as stream:
                     for event in stream:
                         if event.type == "message_start":
-                            live.update(Panel("Starting analysis...", title="Claude-3 Analysis", border_style="blue"))
+                            live.update(Panel("Starting analysis...", title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"))
                         elif event.type == "content_block_start":
                             current_content = ""
                         elif event.type == "content_block_delta":
@@ -146,13 +146,13 @@ class ClaudeAnalyzer:
                                 current_content += text
                                 full_response += text
                                 # Update the live display with the current content
-                                live.update(Panel(current_content, title="Claude-3 Analysis", border_style="blue"))
+                                live.update(Panel(current_content, title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"))
                         elif event.type == "content_block_stop":
                             # Content block is complete
                             pass
                         elif event.type == "message_delta":
                             if event.delta.stop_reason:
-                                live.update(Panel("Analysis complete!", title="Claude-3 Analysis", border_style="green"))
+                                live.update(Panel("Analysis complete!", title="Claude-3-5-sonnet-20241022 Analysis", border_style="green"))
                         elif event.type == "message_stop":
                             # Message is complete
                             pass
@@ -233,12 +233,12 @@ class ClaudeAnalyzer:
         
         prompt = f"Analyze this directory tree and provide brief descriptions for each file:\n\n{tree_content}"
         
-        self.console.print("\n[bold blue]Analyzing directory structure with Claude-3...[/bold blue]")
+        self.console.print("\n[bold blue]Analyzing directory structure with Claude-3-5-sonnet-20241022...[/bold blue]")
         
         full_response = ""
         current_content = ""
         
-        with Live(Panel("Analyzing directory structure...", title="Claude-3 Analysis", border_style="blue"), refresh_per_second=4) as live:
+        with Live(Panel("Analyzing directory structure...", title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"), refresh_per_second=4) as live:
             with self.client.messages.stream(
                 max_tokens=1024,
                 messages=[{
@@ -251,7 +251,7 @@ class ClaudeAnalyzer:
             ) as stream:
                 for event in stream:
                     if event.type == "message_start":
-                        live.update(Panel("Starting analysis...", title="Claude-3 Analysis", border_style="blue"))
+                        live.update(Panel("Starting analysis...", title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"))
                     elif event.type == "content_block_start":
                         current_content = ""
                     elif event.type == "content_block_delta":
@@ -260,13 +260,13 @@ class ClaudeAnalyzer:
                             current_content += text
                             full_response += text
                             # Update the live display with the current content
-                            live.update(Panel(current_content, title="Claude-3 Analysis", border_style="blue"))
+                            live.update(Panel(current_content, title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"))
                     elif event.type == "content_block_stop":
                         # Content block is complete
                         pass
                     elif event.type == "message_delta":
                         if event.delta.stop_reason:
-                            live.update(Panel("Analysis complete!", title="Claude-3 Analysis", border_style="green"))
+                            live.update(Panel("Analysis complete!", title="Claude-3-5-sonnet-20241022 Analysis", border_style="green"))
                     elif event.type == "message_stop":
                         # Message is complete
                         pass

@@ -133,6 +133,14 @@ class ProjectAnalyzer:
     def __init__(self, directory: Path):
         self.directory = directory
         
+        # Initialize result storage
+        self.phase1_results = {}
+        self.phase2_results = {}
+        self.phase3_results = {}
+        self.phase4_results = {}
+        self.consolidated_report = {}
+        self.final_analysis = {}
+        
         # Phase 1: Initial Discovery Agents
         self.phase1_agents = [
             ClaudeAgent("Structure Agent", "analyzing directory and file organization", [
@@ -368,38 +376,38 @@ class ProjectAnalyzer:
             task1 = progress.add_task("[green]Phase 1: Initial Discovery...", total=None)
             tree = generate_tree(self.directory)
             package_info = {}  # You can implement package.json parsing here
-            phase1_results = await self.run_phase1(tree, package_info)
+            self.phase1_results = await self.run_phase1(tree, package_info)
             progress.update(task1, completed=True)
             
             # Phase 2: Methodical Planning (o1-preview)
             task2 = progress.add_task("[blue]Phase 2: Methodical Planning...", total=None)
-            phase2_results = await self.run_phase2(phase1_results)
+            self.phase2_results = await self.run_phase2(self.phase1_results)
             progress.update(task2, completed=True)
             
             # Phase 3: Deep Analysis (Claude-3.5-Sonnet)
             task3 = progress.add_task("[yellow]Phase 3: Deep Analysis...", total=None)
-            phase3_results = await self.run_phase3(phase2_results, tree)
+            self.phase3_results = await self.run_phase3(self.phase2_results, tree)
             progress.update(task3, completed=True)
             
             # Phase 4: Synthesis (o1-preview)
             task4 = progress.add_task("[magenta]Phase 4: Synthesis...", total=None)
-            phase4_results = await self.run_phase4(phase3_results)
+            self.phase4_results = await self.run_phase4(self.phase3_results)
             progress.update(task4, completed=True)
             
             # Phase 5: Consolidation (Claude-3.5-Sonnet)
             task5 = progress.add_task("[cyan]Phase 5: Consolidation...", total=None)
             all_results = {
-                "phase1": phase1_results,
-                "phase2": phase2_results,
-                "phase3": phase3_results,
-                "phase4": phase4_results
+                "phase1": self.phase1_results,
+                "phase2": self.phase2_results,
+                "phase3": self.phase3_results,
+                "phase4": self.phase4_results
             }
-            consolidated_report = await self.run_phase5(all_results)
+            self.consolidated_report = await self.run_phase5(all_results)
             progress.update(task5, completed=True)
             
             # Final Analysis (o1-preview)
             task6 = progress.add_task("[white]Final Analysis...", total=None)
-            final_analysis = await self.run_final_analysis(consolidated_report)
+            self.final_analysis = await self.run_final_analysis(self.consolidated_report)
             progress.update(task6, completed=True)
         
         # Format final output
@@ -408,37 +416,90 @@ class ProjectAnalyzer:
             "=" * 50 + "\n",
             "Phase 1: Initial Discovery (Claude-3.5-Sonnet)",
             "-" * 30,
-            json.dumps(phase1_results, indent=2),
+            json.dumps(self.phase1_results, indent=2),
             "\n",
             "Phase 2: Methodical Planning (o1-preview)",
             "-" * 30,
-            phase2_results.get("plan", "Error in planning phase"),
+            self.phase2_results.get("plan", "Error in planning phase"),
             "\n",
             "Phase 3: Deep Analysis (Claude-3.5-Sonnet)",
             "-" * 30,
-            json.dumps(phase3_results, indent=2),
+            json.dumps(self.phase3_results, indent=2),
             "\n",
             "Phase 4: Synthesis (o1-preview)",
             "-" * 30,
-            phase4_results.get("analysis", "Error in synthesis phase"),
+            self.phase4_results.get("analysis", "Error in synthesis phase"),
             "\n",
             "Phase 5: Consolidation (Claude-3.5-Sonnet)",
             "-" * 30,
-            consolidated_report.get("report", "Error in consolidation phase"),
+            self.consolidated_report.get("report", "Error in consolidation phase"),
             "\n",
             "Final Analysis (o1-preview)",
             "-" * 30,
-            final_analysis.get("analysis", "Error in final analysis phase"),
+            self.final_analysis.get("analysis", "Error in final analysis phase"),
             "\n",
             "Analysis Metrics",
             "-" * 30,
             f"Time taken: {time.time() - start_time:.2f} seconds",
-            f"Phase 2 reasoning tokens: {phase2_results.get('reasoning_tokens', 0)}",
-            f"Phase 4 reasoning tokens: {phase4_results.get('reasoning_tokens', 0)}",
-            f"Final Analysis reasoning tokens: {final_analysis.get('reasoning_tokens', 0)}"
+            f"Phase 2 reasoning tokens: {self.phase2_results.get('reasoning_tokens', 0)}",
+            f"Phase 4 reasoning tokens: {self.phase4_results.get('reasoning_tokens', 0)}",
+            f"Final Analysis reasoning tokens: {self.final_analysis.get('reasoning_tokens', 0)}"
         ]
         
         return "\n".join(analysis)
+
+def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
+    """Save each phase's output to separate markdown files."""
+    # Create phases_output directory
+    output_dir = directory / "phases_output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Phase 1: Initial Discovery
+    with open(output_dir / "phase1_discovery.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 1: Initial Discovery (Claude-3.5-Sonnet)\n\n")
+        f.write("## Agent Findings\n\n")
+        f.write("```json\n")
+        f.write(json.dumps(analysis_data["phase1"], indent=2))
+        f.write("\n```\n")
+    
+    # Phase 2: Methodical Planning
+    with open(output_dir / "phase2_planning.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 2: Methodical Planning (o1-preview)\n\n")
+        f.write(analysis_data["phase2"].get("plan", "Error in planning phase"))
+    
+    # Phase 3: Deep Analysis
+    with open(output_dir / "phase3_analysis.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 3: Deep Analysis (Claude-3.5-Sonnet)\n\n")
+        f.write("```json\n")
+        f.write(json.dumps(analysis_data["phase3"], indent=2))
+        f.write("\n```\n")
+    
+    # Phase 4: Synthesis
+    with open(output_dir / "phase4_synthesis.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 4: Synthesis (o1-preview)\n\n")
+        f.write(analysis_data["phase4"].get("analysis", "Error in synthesis phase"))
+    
+    # Phase 5: Consolidation
+    with open(output_dir / "phase5_consolidation.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 5: Consolidation (Claude-3.5-Sonnet)\n\n")
+        f.write(analysis_data["consolidated_report"].get("report", "Error in consolidation phase"))
+    
+    # Final Analysis
+    with open(output_dir / "final_analysis.md", "w", encoding="utf-8") as f:
+        f.write("# Final Analysis (o1-preview)\n\n")
+        f.write(analysis_data["final_analysis"].get("analysis", "Error in final analysis phase"))
+    
+    # Complete Report
+    with open(output_dir / "complete_report.md", "w", encoding="utf-8") as f:
+        f.write("# Complete Project Analysis Report\n\n")
+        f.write(f"Project: {directory}\n")
+        f.write("=" * 50 + "\n\n")
+        f.write("## Analysis Metrics\n\n")
+        f.write(f"- Time taken: {analysis_data['metrics']['time']:.2f} seconds\n")
+        f.write(f"- Phase 2 reasoning tokens: {analysis_data['metrics']['phase2_tokens']}\n")
+        f.write(f"- Phase 4 reasoning tokens: {analysis_data['metrics']['phase4_tokens']}\n")
+        f.write(f"- Final Analysis reasoning tokens: {analysis_data['metrics']['final_tokens']}\n\n")
+        f.write("See individual phase files for detailed outputs.")
 
 @click.command()
 @click.option('--path', '-p', type=str, help='Path to the project directory')
@@ -458,12 +519,42 @@ def main(path: str, output: str):
         
         console.print(f"\n[bold]Analyzing project:[/] {directory}")
         analyzer = ProjectAnalyzer(directory)
-        analysis = asyncio.run(analyzer.analyze())
+        start_time = time.time()  # Start timing here
+        analysis_result = asyncio.run(analyzer.analyze())
         
+        # Save the complete analysis to the main output file
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(analysis)
+            f.write(analysis_result)
+        
+        # Extract results from analyzer
+        phase1_results = analyzer.phase1_results if hasattr(analyzer, 'phase1_results') else {}
+        phase2_results = analyzer.phase2_results if hasattr(analyzer, 'phase2_results') else {}
+        phase3_results = analyzer.phase3_results if hasattr(analyzer, 'phase3_results') else {}
+        phase4_results = analyzer.phase4_results if hasattr(analyzer, 'phase4_results') else {}
+        consolidated_report = analyzer.consolidated_report if hasattr(analyzer, 'consolidated_report') else {}
+        final_analysis = analyzer.final_analysis if hasattr(analyzer, 'final_analysis') else {}
+        
+        # Prepare data for individual phase outputs
+        analysis_data = {
+            "phase1": phase1_results,
+            "phase2": phase2_results,
+            "phase3": phase3_results,
+            "phase4": phase4_results,
+            "consolidated_report": consolidated_report,
+            "final_analysis": final_analysis,
+            "metrics": {
+                "time": time.time() - start_time,
+                "phase2_tokens": phase2_results.get("reasoning_tokens", 0),
+                "phase4_tokens": phase4_results.get("reasoning_tokens", 0),
+                "final_tokens": final_analysis.get("reasoning_tokens", 0)
+            }
+        }
+        
+        # Save individual phase outputs
+        save_phase_outputs(directory, analysis_data)
         
         console.print(f"\n[green]Analysis saved to:[/] {output_file}")
+        console.print(f"[green]Individual phase outputs saved to:[/] {directory}/phases_output/")
         
     except Exception as e:
         logger.error(f"Error: {str(e)}")

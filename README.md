@@ -20,11 +20,14 @@ Tired of manually writing `.cursorrules` files? Look no further! CursorRules Arc
 ## ✨ Features
 
 - 🤖 **Intelligent Rule Generation** - Creates `.cursorrules` files tailored to your project
-- 🔍 **Deep Project Analysis** - Understands your codebase thoroughly
+- 🔍 **Deep Project Analysis** - Understands your codebase thoroughly using multi-phase analysis
 - 📊 **Tech Stack Detection** - Identifies frameworks and libraries used
 - 🎨 **Style Recognition** - Learns your coding style automatically
 - 📝 **Comprehensive Documentation** - Generates clear and helpful docs
 - 🚀 **Cursor IDE Integration** - Seamless plug-and-play functionality
+- 🔄 **Async Processing** - Parallel agent execution for faster analysis
+- 📑 **Detailed Phase Outputs** - Separate markdown files for each analysis phase
+- 📈 **Performance Metrics** - Track analysis time and token usage
 
 ## 🛠️ Requirements
 
@@ -32,6 +35,10 @@ Tired of manually writing `.cursorrules` files? Look no further! CursorRules Arc
 - OpenAI API key (`o1-preview` access)
 - Anthropic API key (`claude-3.5-sonnet` access)
 - Cursor IDE
+- `rich` library for beautiful terminal output
+- `typer` for CLI interface
+- `watchdog` for file monitoring
+- `asyncio` for async operations
 
 ## ⚡ Quick Start
 
@@ -55,94 +62,106 @@ Tired of manually writing `.cursorrules` files? Look no further! CursorRules Arc
 
 3. **Run the Tool**
    ```bash
-   python project_extractor.py -p /path/to/your/project
+   python main.py -p /path/to/your/project
    ```
 
 ## 🔄 How It Works
 
-CursorRules Architect follows a multi-phase analysis flow to generate your `.cursorrules`:
+CursorRules Architect uses a sophisticated multi-phase analysis system that alternates between Claude-3.5-Sonnet and o1-preview models:
 
-1. **Initial Discovery** (`Claude-3.5-Sonnet`)
-   - **Structure Agent**: Analyzes directory and file organization
-   - **Dependency Agent**: Examines package dependencies
-   - **Tech Stack Agent**: Identifies frameworks and technologies used
+### Phase 1: Initial Discovery (Claude-3.5-Sonnet)
+- Runs three parallel agents using `asyncio`:
+  1. **Structure Agent**: Analyzes directory/file organization
+  2. **Dependency Agent**: Investigates packages and libraries
+  3. **Tech Stack Agent**: Identifies frameworks and technologies
 
-2. **Methodical Planning** (`o1-preview`)
-   - Processes agent findings
-   - Creates a detailed, step-by-step analysis plan
-   - Tracks reasoning tokens (unique to `o1-preview`)
+### Phase 2: Methodical Planning (o1-preview)
+- Takes findings from Phase 1 agents
+- Creates detailed analysis plan
+- Tracks reasoning tokens
+- Plans next phase execution
 
-3. **Deep Analysis** (`Claude-3.5-Sonnet`)
-   - **Code Analysis Agent**: Examines core logic and patterns
-   - **Dependency Mapping Agent**: Maps file relationships
-   - **Architecture Agent**: Studies design patterns
-   - **Documentation Agent**: Generates comprehensive documentation
+### Phase 3: Deep Analysis (Claude-3.5-Sonnet)
+- Runs four specialized agents:
+  1. **Code Analysis Agent**: Examines logic patterns
+  2. **Dependency Mapping Agent**: Maps file relationships
+  3. **Architecture Agent**: Studies design patterns
+  4. **Documentation Agent**: Creates documentation
 
-4. **Synthesis** (`o1-preview`)
-   - Reviews and synthesizes deep analysis findings
-   - Updates analysis directions
-   - Tracks reasoning tokens
+### Phase 4: Synthesis (o1-preview)
+- Reviews and synthesizes Phase 3 findings
+- Updates analysis directions
+- Identifies areas needing deeper investigation
+- Tracks reasoning tokens
 
-5. **Consolidation** (`Claude-3.5-Sonnet`)
-   - Combines all findings
-   - Prepares comprehensive documentation
+### Phase 5: Consolidation (Claude-3.5-Sonnet)
+- Final consolidation of all findings
+- Creates comprehensive documentation
+- Prepares final report
 
-6. **Final Analysis** (`o1-preview`)
-   - Completes system structure mapping
-   - Documents relationships
-   - Provides improvement recommendations
-   - Tracks reasoning tokens
+### Final Analysis (o1-preview)
+- Complete system structure mapping
+- Documents relationships
+- Provides improvement recommendations
+- Tracks reasoning tokens
 
-## ⚠️ Critical Model Notes
+## 📂 Output Structure
 
-**Important:** These models are fixed and must **never** be changed:
+The tool generates multiple output files:
 
-- **Claude-3.5-Sonnet-20241022** (Anthropic)
-- **o1-preview** (OpenAI)
-
-### Special Note on `o1-preview`
-
-The `o1-preview` model is **contractually bound** and operates differently from standard OpenAI models:
-
-- Must be treated as a dedicated contract
-- Cannot be substituted with other OpenAI models
-- Has unique reasoning token tracking capabilities
-- Specialized for methodical planning and synthesis
-
-## 📝 Example Output
-
-```yaml
-PROJECT_NAME: Your Awesome Project
-CODING_STYLE: Follows PEP 8 Standards
-FRAMEWORK: Your Framework
-TEST_FRAMEWORK: Your Test Framework
-DOCUMENTATION: Automatically Generated
-AI_BEHAVIOR:
-  - Write clean and efficient code
-  - Adhere to project conventions
-  - Ensure scalability and maintainability
+```
+your-project/
+├── phases_output/
+│   ├── phase1_discovery.md      # Initial agent findings
+│   ├── phase2_planning.md       # Planning document
+│   ├── phase3_analysis.md       # Deep analysis results
+│   ├── phase4_synthesis.md      # Synthesized findings
+│   ├── phase5_consolidation.md  # Consolidated report
+│   ├── final_analysis.md        # Final recommendations
+│   └── complete_report.md       # Overview with metrics
+├── your-project_analysis.txt    # Complete analysis output
+└── .cursorrules                 # Generated rules file
 ```
 
-## 🔒 Security First
+## 🔍 Analysis Details
 
-Your API keys and project data are secure. We prioritize your privacy and do not store sensitive information.
+### Parallel Processing
+- Phase 1 runs multiple agents simultaneously using `asyncio.gather`
+- Each agent makes independent API calls
+- Results are combined before proceeding to next phase
+
+### Token Tracking
+- Monitors token usage for o1-preview phases
+- Tracks reasoning tokens separately
+- Provides detailed metrics in final report
+
+### Performance Metrics
+- Total analysis time
+- Per-phase token usage
+- Agent execution times
+- API call statistics
+
+## 🛠️ Advanced Usage
+
+### Custom Exclusions
+```bash
+python main.py -p /path/to/project --exclude "node_modules,dist,build"
+```
+
+### Output Directory
+```bash
+python main.py -p /path/to/project -o custom_output.txt
+```
+
+### Monitoring Mode
+```bash
+python monitoring-cursorrules.py -p /path/to/project
+```
 
 ## 🤝 Contributing
 
-Got ideas? Let's make this even better! Check out the [Contributing Guide](CONTRIBUTING.md).
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. **Fork the Repository**
-2. **Create a Feature Branch** (`git checkout -b feature/YourFeature`)
-3. **Commit Changes** (`git commit -m 'Add a cool feature'`)
-4. **Push to Branch** (`git push origin feature/YourFeature`)
-5. **Open a Pull Request**
+## 📝 License
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE) - feel free to use it!
-
----
-
-<div align="center">
-Built with ❤️ by <a href="https://github.com/SlyyCooper">SlyyCooper</a>
-</div> 
+MIT License - see [LICENSE](LICENSE) for details.

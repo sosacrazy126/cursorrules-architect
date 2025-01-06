@@ -99,12 +99,12 @@ class ProjectArchitectAgent:
         {tree_content}
         """
         
-        self.console.print("\n[bold blue]Analyzing project structure with Claude-3...[/bold blue]")
+        self.console.print("\n[bold blue]Analyzing project structure with Claude 3.5 Sonnet 20241022...[/bold blue]")
         
         full_response = ""
         current_content = ""
         
-        with Live(Panel("Analyzing project structure...", title="Claude-3 Analysis", border_style="blue"), refresh_per_second=4) as live:
+        with Live(Panel("Analyzing project structure...", title="Claude-3-5-sonnet-20241022 Analysis", border_style="blue"), refresh_per_second=4) as live:
             with self.client.messages.stream(
                 max_tokens=2048,
                 messages=[{
@@ -117,7 +117,7 @@ class ProjectArchitectAgent:
             ) as stream:
                 for event in stream:
                     if event.type == "message_start":
-                        live.update(Panel("Starting analysis...", title="Claude-3 Analysis", border_style="blue"))
+                        live.update(Panel("Starting analysis...", title="Claude 3.5 Sonnet 20241022 Analysis", border_style="blue"))
                     elif event.type == "content_block_start":
                         current_content = ""
                     elif event.type == "content_block_delta":

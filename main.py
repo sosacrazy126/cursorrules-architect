@@ -31,7 +31,7 @@ logger = logging.getLogger("project_extractor")
 def generate_tree(path: Path, prefix: str = "", max_depth: int = 4, current_depth: int = 0) -> List[str]:
     """Generate a tree structure of the directory up to max_depth"""
     EXCLUDED_DIRS = {
-        'node_modules', '.next', '.git', 'venv', '__pycache__', 
+        'node_modules', '.next', '.git', 'venv', '__pycache__', '_pycache_',
         'dist', 'build', '.vscode', '.idea', 'coverage',
         '.pytest_cache', '.mypy_cache', 'env', '.env', '.venv',
         'site-packages'
@@ -42,7 +42,7 @@ def generate_tree(path: Path, prefix: str = "", max_depth: int = 4, current_dept
         '.DS_Store', '.env', '.env.local', '.gitignore',
         'README.md', 'LICENSE', '.eslintrc', '.prettierrc',
         'tsconfig.json', 'requirements.txt', 'poetry.lock',
-        'Pipfile.lock'
+        'Pipfile.lock', '.gitattributes', '.gitconfig', '.gitmodules',
     }
     
     EXCLUDED_EXTENSIONS = {
@@ -101,7 +101,7 @@ class ClaudeAgent:
         """Run agent analysis using Claude-3-5-sonnet-20241022"""
         try:
             response = anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-3-7-sonnet-20250219",
                 max_tokens=4000,
                 messages=[{
                     "role": "user",
@@ -200,10 +200,10 @@ class ProjectAnalyzer:
         }
         
     async def run_phase2(self, phase1_results: Dict) -> Dict:
-        """Methodical Planning Phase using o1-preview"""
+        """Methodical Planning Phase using o1"""
         try:
             response = openai_client.chat.completions.create(
-                model="o1-preview",
+                model="o1",
                 messages=[{
                     "role": "user",
                     "content": f"""Process these agent findings and create a detailed, step-by-step analysis plan:
@@ -253,10 +253,10 @@ class ProjectAnalyzer:
         }
         
     async def run_phase4(self, phase3_results: Dict) -> Dict:
-        """Synthesis Phase using o1-preview"""
+        """Synthesis Phase using o1"""
         try:
             response = openai_client.chat.completions.create(
-                model="o1-preview",
+                model="o1",
                 messages=[{
                     "role": "user",
                     "content": f"""Review and synthesize these agent findings:
@@ -295,7 +295,7 @@ class ProjectAnalyzer:
         """Consolidation Phase using Claude-3-5-sonnet-20241022"""
         try:
             response = anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-3-7-sonnet-20250219",
                 max_tokens=4000,
                 messages=[{
                     "role": "user",
@@ -309,7 +309,7 @@ class ProjectAnalyzer:
                     2. Organize by component/module
                     3. Create comprehensive documentation
                     4. Highlight key discoveries
-                    5. Prepare final report for O1"""
+                    5. Prepare final report for o1"""
                 }]
             )
             
@@ -325,10 +325,10 @@ class ProjectAnalyzer:
             }
             
     async def run_final_analysis(self, consolidated_report: Dict) -> Dict:
-        """Final Analysis Phase using o1-preview"""
+        """Final Analysis Phase using o1"""
         try:
             response = openai_client.chat.completions.create(
-                model="o1-preview",
+                model="o1",
                 messages=[{
                     "role": "user",
                     "content": f"""Process this consolidated report and provide a final analysis:
@@ -379,7 +379,7 @@ class ProjectAnalyzer:
             self.phase1_results = await self.run_phase1(tree, package_info)
             progress.update(task1, completed=True)
             
-            # Phase 2: Methodical Planning (o1-preview)
+            # Phase 2: Methodical Planning (o1)
             task2 = progress.add_task("[blue]Phase 2: Methodical Planning...", total=None)
             self.phase2_results = await self.run_phase2(self.phase1_results)
             progress.update(task2, completed=True)
@@ -389,7 +389,7 @@ class ProjectAnalyzer:
             self.phase3_results = await self.run_phase3(self.phase2_results, tree)
             progress.update(task3, completed=True)
             
-            # Phase 4: Synthesis (o1-preview)
+            # Phase 4: Synthesis (o1)
             task4 = progress.add_task("[magenta]Phase 4: Synthesis...", total=None)
             self.phase4_results = await self.run_phase4(self.phase3_results)
             progress.update(task4, completed=True)
@@ -405,7 +405,7 @@ class ProjectAnalyzer:
             self.consolidated_report = await self.run_phase5(all_results)
             progress.update(task5, completed=True)
             
-            # Final Analysis (o1-preview)
+            # Final Analysis (o1)
             task6 = progress.add_task("[white]Final Analysis...", total=None)
             self.final_analysis = await self.run_final_analysis(self.consolidated_report)
             progress.update(task6, completed=True)
@@ -418,7 +418,7 @@ class ProjectAnalyzer:
             "-" * 30,
             json.dumps(self.phase1_results, indent=2),
             "\n",
-            "Phase 2: Methodical Planning (o1-preview)",
+            "Phase 2: Methodical Planning (o1)",
             "-" * 30,
             self.phase2_results.get("plan", "Error in planning phase"),
             "\n",
@@ -426,7 +426,7 @@ class ProjectAnalyzer:
             "-" * 30,
             json.dumps(self.phase3_results, indent=2),
             "\n",
-            "Phase 4: Synthesis (o1-preview)",
+            "Phase 4: Synthesis (o1)",
             "-" * 30,
             self.phase4_results.get("analysis", "Error in synthesis phase"),
             "\n",
@@ -434,7 +434,7 @@ class ProjectAnalyzer:
             "-" * 30,
             self.consolidated_report.get("report", "Error in consolidation phase"),
             "\n",
-            "Final Analysis (o1-preview)",
+            "Final Analysis (o1)",
             "-" * 30,
             self.final_analysis.get("analysis", "Error in final analysis phase"),
             "\n",
@@ -464,7 +464,7 @@ def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
     
     # Phase 2: Methodical Planning
     with open(output_dir / "phase2_planning.md", "w", encoding="utf-8") as f:
-        f.write("# Phase 2: Methodical Planning (o1-preview)\n\n")
+        f.write("# Phase 2: Methodical Planning (o1)\n\n")
         f.write(analysis_data["phase2"].get("plan", "Error in planning phase"))
     
     # Phase 3: Deep Analysis
@@ -476,7 +476,7 @@ def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
     
     # Phase 4: Synthesis
     with open(output_dir / "phase4_synthesis.md", "w", encoding="utf-8") as f:
-        f.write("# Phase 4: Synthesis (o1-preview)\n\n")
+        f.write("# Phase 4: Synthesis (o1)\n\n")
         f.write(analysis_data["phase4"].get("analysis", "Error in synthesis phase"))
     
     # Phase 5: Consolidation
@@ -486,7 +486,7 @@ def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
     
     # Final Analysis
     with open(output_dir / "final_analysis.md", "w", encoding="utf-8") as f:
-        f.write("# Final Analysis (o1-preview)\n\n")
+        f.write("# Final Analysis (o1)\n\n")
         f.write(analysis_data["final_analysis"].get("analysis", "Error in final analysis phase"))
     
     # Complete Report

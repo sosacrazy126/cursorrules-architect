@@ -1,4 +1,4 @@
-The main goal is to provide comprehensive project analysis and maintain the `.cursorrules` file, which defines project standards and AI behavior guidelines for your codebase.
+YOu are an intelligent senioor developer and AI code generator.
 - **Anthropic DEVELOPMENT**: You are required to use the brand new latest model: **'claude-3-5-sonnet-20241022'**!!
 * !!!NEVER use 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307' or 'claude-3-opus-20240229'!!!
 * **OpenAI DEVELOPMENT**: You are required to use the brand new latest model: **'o1-preview'**!!
@@ -12,39 +12,20 @@ The main goal is to provide comprehensive project analysis and maintain the `.cu
 ├── 📁 agents
 │   ├── 📄 dependency_analyzer_agent.py
 │   └── 📄 project_architect_agent.py
-├── 📁 architects
-│   ├── 📄 monitoring-cursorrules.py
-│   ├── 📄 project_doc_generator.py
-│   └── 📄 project_extractor.py
 ├── 📁 docs
+│   ├── 📁 public
 │   └── 📄 directory_structure.md
+├── 📁 seperate_architects
+│   └── 📄 project_doc_generator.py
 ├── 📁 utils
+│   ├── 📄 monitoring-cursorrules.py
 │   └── 📄 project_doc_generator.py
 ├── 📄 .env
+├── 📄 cursorrules-architect_analysis.txt
+├── 📄 main.py
 └── 📄 README.md
 ```
 <!-- END_STRUCTURE -->
-<tree_structure>
-.
-├── .cursorrules
-├── .env
-├── .gitignore
-├── CONTRIBUTING.md
-├── README.md
-├── agents
-│   ├── dependency_analyzer_agent.py
-│   ├── project_architect_agent.py
-├── main.py
-├── requirements.txt
-├── seperate_architects
-│   ├── project_doc_generator.py
-├── utils
-│   ├── __init__.py
-│   ├── __pycache__
-│   │   ├── project_doc_generator.cpython-311.pyc
-│   ├── monitoring-cursorrules.py
-│   ├── project_doc_generator.py
-</tree_structure>
 
 The system uses a sophisticated 5-phase analysis approach that alternates between Claude-3.5-Sonnet and o1-preview models for different types of analysis. Here's how it works:
 
@@ -323,7 +304,7 @@ The system uses a sophisticated 5-phase analysis process:
 
 ### 3. Key Features
 
-- Uses modern AI models (Claude-3.5-Sonnet-20241022 and o1-preview)
+- Uses modern AI models (claude-3-7-sonnet-20250219 and o1-preview)
 - Real-time progress tracking with rich console output
 - Comprehensive dependency analysis
 - Automatic documentation generation

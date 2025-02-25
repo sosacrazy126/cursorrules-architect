@@ -32,7 +32,7 @@ Tired of manually writing `.cursorrules` files? Look no further! CursorRules Arc
 ## 🛠️ Requirements
 
 - Python 3.8+
-- OpenAI API key (`o1-preview` access)
+- OpenAI API key (`o1` access)
 - Anthropic API key (`claude-3.5-sonnet` access)
 - Cursor IDE
 - `rich` library for beautiful terminal output
@@ -67,7 +67,7 @@ Tired of manually writing `.cursorrules` files? Look no further! CursorRules Arc
 
 ## 🔄 How It Works
 
-CursorRules Architect uses a sophisticated multi-phase analysis system that alternates between Claude-3.5-Sonnet and o1-preview models:
+CursorRules Architect uses a sophisticated multi-phase analysis system that alternates between Claude-3.5-Sonnet and o1 models:
 
 ### Phase 1: Initial Discovery (Claude-3.5-Sonnet)
 - Runs three parallel agents using `asyncio`:
@@ -75,7 +75,7 @@ CursorRules Architect uses a sophisticated multi-phase analysis system that alte
   2. **Dependency Agent**: Investigates packages and libraries
   3. **Tech Stack Agent**: Identifies frameworks and technologies
 
-### Phase 2: Methodical Planning (o1-preview)
+### Phase 2: Methodical Planning (o1)
 - Takes findings from Phase 1 agents
 - Creates detailed analysis plan
 - Tracks reasoning tokens
@@ -88,7 +88,7 @@ CursorRules Architect uses a sophisticated multi-phase analysis system that alte
   3. **Architecture Agent**: Studies design patterns
   4. **Documentation Agent**: Creates documentation
 
-### Phase 4: Synthesis (o1-preview)
+### Phase 4: Synthesis (o1)
 - Reviews and synthesizes Phase 3 findings
 - Updates analysis directions
 - Identifies areas needing deeper investigation
@@ -99,7 +99,7 @@ CursorRules Architect uses a sophisticated multi-phase analysis system that alte
 - Creates comprehensive documentation
 - Prepares final report
 
-### Final Analysis (o1-preview)
+### Final Analysis (o1)
 - Complete system structure mapping
 - Documents relationships
 - Provides improvement recommendations
@@ -131,7 +131,7 @@ your-project/
 - Results are combined before proceeding to next phase
 
 ### Token Tracking
-- Monitors token usage for o1-preview phases
+- Monitors token usage for o1 phases
 - Tracks reasoning tokens separately
 - Provides detailed metrics in final report
 

@@ -36,8 +36,8 @@ To get started with development, you'll need to set up your local environment.
 ### Prerequisites
 
 - Python 3.8 or higher
-- An OpenAI API key with access to `o1-preview`
-- An Anthropic API key with access to `claude-3.5-sonnet-20241022`
+- An OpenAI API key with access to `o1`
+- An Anthropic API key with access to `claude-3-7-sonnet-20250219`
 - Git
 
 ### Installing Dependencies
@@ -80,7 +80,7 @@ $env:OPENAI_API_KEY='your-openai-api-key'
 $env:ANTHROPIC_API_KEY='your-anthropic-api-key'
 ```
 
-**Important:** Ensure that your API keys have access to the required models (`o1-preview` for OpenAI and `claude-3.5-sonnet-20241022` for Anthropic).
+**Important:** Ensure that your API keys have access to the required models (`o1` for OpenAI and `claude-3-7-sonnet-20250219` for Anthropic).
 
 ## How to Contribute
 
@@ -164,30 +164,6 @@ Replace `/path/to/your/project` with the path to the project you want to analyze
 ### Testing
 
 At this time, unit tests are not implemented. If you contribute tests, please include instructions on how to run them.
-
-## Important Notes
-
-### Fixed Models
-
-**Critical:** The following AI models are **fixed** and must **never** be changed:
-
-- **Claude-3.5-Sonnet-20241022** (Anthropic)
-- **o1-preview** (OpenAI)
-
-These models are integral to the functionality and contractual obligations of the project.
-
-### Model Usage Restrictions
-
-#### Special Note on `o1-preview`
-
-The `o1-preview` model is **contractually bound** and operates differently from standard OpenAI models:
-
-- Must be treated as a dedicated contract
-- **Cannot be substituted** with other OpenAI models
-- Has unique reasoning token tracking capabilities
-- Specialized for methodical planning and synthesis
-
-**Do Not** attempt to replace or modify the usage of these models in the codebase, specifically in `project_extractor.py`.
 
 ## Questions?
 

@@ -296,7 +296,7 @@ def main(path: str, output: str, use_new_architecture: bool):
 
         console.print(f"[green]Individual phase outputs saved to:[/] {directory}/phases_output/")
         console.print(f"[green]Cursor rules created at:[/] {directory}/.cursorrules")  # Inform about .cursorrules file
-        console.print(f"[green]Execution logs saved to:[/] {directory}/phases_output/logs.md")  # Inform about logs file
+        console.print(f"[green]Execution metrics saved to:[/] {directory}/phases_output/metrics.md")  # Inform about metrics file
 
     except Exception as e:
         logger.error(f"Error: {str(e)}")

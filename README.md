@@ -321,7 +321,7 @@ your-project/
     ├── phase5_consolidation.md  # Consolidated report
     ├── final_analysis.md        # Final recommendations
     ├── complete_report.md       # Overview of all phases
-    └── logs.md                  # Analysis metrics and logs
+    └── metrics.md                  # Analysis metrics
 ```
 
 ### Analysis Metrics

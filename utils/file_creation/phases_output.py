@@ -129,12 +129,12 @@ def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
         f.write('\n'.join(tree_section))  # Append the tree structure
 
     # ====================================================
-    # Create Logs File
-    # This section creates a log file that summarizes key information
+    # Create metrics file
+    # This section creates a metrics file that summarizes key information
     # from the entire analysis, including metrics like total time and token usage.
     # ====================================================
-    with open(output_dir / "logs.md", "w", encoding="utf-8") as f:
-        f.write("# CursorRules Architect Logs\n\n")
+    with open(output_dir / "metrics.md", "w", encoding="utf-8") as f:
+        f.write("# CursorRules Architect Metrics\n\n")
         f.write(f"Project: {directory}\n")
         f.write("=" * 50 + "\n\n")
         f.write("## Analysis Metrics\n\n")

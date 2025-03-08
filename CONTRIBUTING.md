@@ -1,5 +1,4 @@
-
-# Contributing to CursorRules Architect
+# Contributing to CursorRules Architect V2
 
 Thank you for considering contributing to CursorRules Architect! Your help is greatly appreciated. This guide explains how you can contribute to the project.
 
@@ -22,7 +21,8 @@ Thank you for considering contributing to CursorRules Architect! Your help is gr
 - [Running the Project](#running-the-project)
 - [Testing](#testing)
 - [Important Notes](#important-notes)
-  - [Fixed Models](#fixed-models)
+  - [Supported Models](#supported-models)
+  - [Model Configuration](#model-configuration)
   - [Model Usage Restrictions](#model-usage-restrictions)
 
 ## Code of Conduct
@@ -36,8 +36,10 @@ To get started with development, you'll need to set up your local environment.
 ### Prerequisites
 
 - Python 3.8 or higher
-- An OpenAI API key with access to `o1`
-- An Anthropic API key with access to `claude-3-7-sonnet-20250219`
+- API keys for at least one of the following providers:
+  - OpenAI API key with access to `o1`, `o3-mini`, or `gpt-4o`
+  - Anthropic API key with access to `claude-3-7-sonnet-20250219` 
+  - DeepSeek API key with access to DeepSeek Reasoner
 - Git
 
 ### Installing Dependencies
@@ -70,17 +72,28 @@ Set your API keys as environment variables:
 # Linux/macOS
 export OPENAI_API_KEY='your-openai-api-key'
 export ANTHROPIC_API_KEY='your-anthropic-api-key'
+export DEEPSEEK_API_KEY='your-deepseek-api-key'
 
 # Windows Command Prompt
 set OPENAI_API_KEY=your-openai-api-key
 set ANTHROPIC_API_KEY=your-anthropic-api-key
+set DEEPSEEK_API_KEY=your-deepseek-api-key
 
 # Windows PowerShell
 $env:OPENAI_API_KEY='your-openai-api-key'
 $env:ANTHROPIC_API_KEY='your-anthropic-api-key'
+$env:DEEPSEEK_API_KEY='your-deepseek-api-key'
 ```
 
-**Important:** Ensure that your API keys have access to the required models (`o1` for OpenAI and `claude-3-7-sonnet-20250219` for Anthropic).
+Alternatively, create a `.env` file in the project root:
+
+```
+ANTHROPIC_API_KEY=your-anthropic-api-key
+OPENAI_API_KEY=your-openai-api-key
+DEEPSEEK_API_KEY=your-deepseek-api-key
+```
+
+**Important:** Ensure that your API keys have access to the required models. You can configure which models to use in `config/agents.py`.
 
 ## How to Contribute
 
@@ -111,7 +124,7 @@ We welcome feature suggestions! Please open an issue with:
 2. **Clone Your Fork**:
 
    ```bash
-   git clone https://github.com/SlyyCooper/cursorrules-architect.git
+   git clone https://github.com/your-username/cursorrules-architect.git
    cd cursorrules-architect
    ```
 
@@ -137,6 +150,10 @@ We welcome feature suggestions! Please open an issue with:
 - **Typing**: Use type hints where appropriate.
 - **Imports**: Organize imports according to [PEP 8](https://www.python.org/dev/peps/pep-0008/#imports).
 - **Documentation**: Include docstrings for functions, classes, and modules.
+- **Architecture**: Follow the existing architectural patterns:
+  - Use the `BaseArchitect` abstract class for new AI model providers
+  - Keep prompts and logic separated
+  - Ensure compatibility with the phase-based approach
 
 #### Commit Messages
 
@@ -148,6 +165,7 @@ We welcome feature suggestions! Please open an issue with:
 - Ensure your code passes all tests.
 - Address any merge conflicts.
 - Provide a clear description of your changes in the pull request.
+- If adding support for new models or providers, include documentation and examples.
 
 ## Development Setup
 
@@ -159,11 +177,56 @@ You can run the main script using:
 python main.py -p /path/to/your/project
 ```
 
-Replace `/path/to/your/project` with the path to the project you want to analyze.
+To use the new architecture (recommended):
+
+```bash
+python main.py -p /path/to/your/project -n
+```
 
 ### Testing
 
-At this time, unit tests are not implemented. If you contribute tests, please include instructions on how to run them.
+When adding new features or modifying existing ones, consider adding appropriate test cases. To run specific tests:
+
+```bash
+# Test a specific component
+python -m unittest tests/test_your_component.py
+
+# Run all tests
+python -m unittest discover tests
+```
+
+## Important Notes
+
+### Supported Models
+
+CursorRules Architect V2 supports multiple AI models:
+
+- **Anthropic**:
+  - `claude-3-7-sonnet-20250219` (with or without reasoning)
+
+- **OpenAI**:
+  - `o1` (with low/medium/high reasoning)
+  - `o3-mini` (with low/medium/high reasoning)
+  - `gpt-4o` (with temperature control)
+
+- **DeepSeek**:
+  - DeepSeek Reasoner (always with reasoning enabled)
+
+### Model Configuration
+
+You can configure which models are used for each phase by modifying the `MODEL_CONFIG` dictionary in `config/agents.py`. For example:
+
+```python
+MODEL_CONFIG = {
+    "phase1": CLAUDE_WITH_REASONING,  # Use Claude with reasoning for Phase 1
+    "phase2": O1_HIGH,                # Use OpenAI's o1 with high reasoning for Phase 2
+    # etc.
+}
+```
+
+### Model Usage Restrictions
+
+Be mindful of API usage costs when developing and testing. Consider using mock responses or lower token budgets during development.
 
 ## Questions?
 

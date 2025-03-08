@@ -1,314 +1,490 @@
-YOu are an intelligent senioor developer and AI code generator.
-- **Anthropic DEVELOPMENT**: You are required to use the brand new latest model: **'claude-3-5-sonnet-20241022'**!!
-* !!!NEVER use 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307' or 'claude-3-opus-20240229'!!!
-* **OpenAI DEVELOPMENT**: You are required to use the brand new latest model: **'o1-preview'**!!
-* !!!NEVER use 'gpt-4o' or 'gpt-4' or 'gpt-4-turbo' or 'gpt-4-turbo-preview', 'gpt-3.5'!!!
+You are an intelligent senioor developer and AI code generator.
+- **Anthropic DEVELOPMENT**: You are required to use the brand new latest model: **'claude-3-7-sonnet-20250219'**!!
+* !!!NEVER use 'claude-3-5-sonnet', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307' or 'claude-3-opus-20240229'!!!
+* **OpenAI DEVELOPMENT**: You are required to use the brand new latest model: **'o1', 'o3-mini', and 'gpt-4o' **!!
+* !!!NEVER use'gpt-4' or 'gpt-4-turbo' or 'gpt-4-turbo-preview', 'gpt-3.5'!!!
 
-<!-- BEGIN_STRUCTURE -->
-# Project Directory Structure
-------------------------------
+# CursorRules Architect Documentation
+
+CursorRules Architect is a multi-agent codebase analysis tool that leverages advanced AI models from Anthropic and OpenAI to analyze project structures, dependencies, and architectural patterns. The tool performs a comprehensive analysis through a structured pipeline of phases, each designed to extract specific insights from the target codebase.
+
+The primary purpose is to generate detailed reports on project architecture, identify patterns, document relationships between components, and provide improvement recommendations. The system also creates and manages `.cursorrules` and `.cursorignore` files to define project standards and exclusion rules.
+
+## Project Architecture
+
+CursorRules Architect follows a modular architecture with clear separation of concerns:
+
 ```
-📁 cursorrules-architect
-├── 📁 agents
-│   ├── 📄 dependency_analyzer_agent.py
-│   └── 📄 project_architect_agent.py
-├── 📁 docs
-│   ├── 📁 public
-│   └── 📄 directory_structure.md
-├── 📁 seperate_architects
-│   └── 📄 project_doc_generator.py
-├── 📁 utils
-│   ├── 📄 monitoring-cursorrules.py
-│   └── 📄 project_doc_generator.py
-├── 📄 .env
-├── 📄 cursorrules-architect_analysis.txt
-├── 📄 main.py
-└── 📄 README.md
-```
-<!-- END_STRUCTURE -->
-
-The system uses a sophisticated 5-phase analysis approach that alternates between Claude-3.5-Sonnet and o1-preview models for different types of analysis. Here's how it works:
-
-1. **Phase 1: Initial Discovery** (Claude-3.5-Sonnet)
-   - Uses three parallel agents:
-     1. Structure Agent: Analyzes directory/file organization
-     2. Dependency Agent: Investigates packages and libraries
-     3. Tech Stack Agent: Identifies frameworks and technologies
-   - You see multiple "Phase 1" logs because each agent runs independently
-
-2. **Phase 2: Methodical Planning** (o1-preview)
-   - Takes the findings from all Phase 1 agents
-   - Creates a detailed analysis plan including:
-     - File-by-file examination approach
-     - Critical areas needing investigation
-     - Documentation requirements
-     - Inter-dependency mapping method
-
-3. **Phase 3: Deep Analysis** (Claude-3.5-Sonnet)
-   - Uses four specialized agents:
-     1. Code Analysis Agent: Examines logic patterns
-     2. Dependency Mapping Agent: Maps file relationships
-     3. Architecture Agent: Studies design patterns
-     4. Documentation Agent: Creates documentation
-
-4. **Phase 4: Synthesis** (o1-preview)
-   - Reviews and synthesizes all findings from Phase 3
-   - Updates analysis directions
-   - Identifies areas needing deeper investigation
-
-5. **Phase 5: Consolidation** (Claude-3.5-Sonnet)
-   - Final consolidation of all findings
-   - Creates comprehensive documentation
-   - Prepares report for final analysis
-
-The reason you see multiple Phase 1/2 logs is because:
-- Phase 1 runs multiple agents in parallel (hence multiple Claude API calls)
-- Each agent works independently but simultaneously
-- The system waits for all agents to complete before moving to the next phase
-
-The flow looks like this:
-```mermaid
-graph TD
-    A[Start] --> B[Phase 1: Initial Discovery]
-    B -->|Structure Agent| C[Claude Analysis]
-    B -->|Dependency Agent| D[Claude Analysis]
-    B -->|Tech Stack Agent| E[Claude Analysis]
-    
-    C & D & E --> F[Phase 2: Planning]
-    F -->|o1-preview| G[Create Analysis Plan]
-    
-    G --> H[Phase 3: Deep Analysis]
-    H -->|Multiple Agents| I[Detailed Analysis]
-    
-    I --> J[Phase 4: Synthesis]
-    J -->|o1-preview| K[Synthesize Findings]
-    
-    K --> L[Phase 5: Consolidation]
-    L -->|Claude| M[Final Report]
+cursorrules-architect
+├── config/              # Configuration settings and prompts
+├── core/                # Core application logic
+│   ├── agents/          # AI agent implementations
+│   ├── analysis/        # Analysis phase implementations
+│   └── interfaces/      # Type definitions and models
+├── utils/               # Utility functions and tools
+├── main.py              # Main application entry point
+└── requirements.txt     # Project dependencies
 ```
 
-This multi-phase approach ensures:
-1. Thorough analysis from different perspectives
-2. Cross-validation of findings
-3. Progressive refinement of understanding
-4. Comprehensive documentation
-5. Leveraging the strengths of both Claude and o1-preview models
+The project adopts a multi-phase analysis approach where each phase builds on the insights from previous phases, culminating in a comprehensive analysis report.
 
-### Number of API calls per phase
+## Core Components
 
-1. **Phase 1** appears multiple times (3 times) because it runs three agents in parallel:
-   ```python
-   # From main.py
-   self.phase1_agents = [
-       ClaudeAgent("Structure Agent", "analyzing directory and file organization", [...]),
-       ClaudeAgent("Dependency Agent", "investigating packages and libraries", [...]),
-       ClaudeAgent("Tech Stack Agent", "identifying frameworks and technologies", [...])
-   ]
-   ```
-   - Each agent makes its own API call to Claude
-   - They run simultaneously (using `asyncio.gather`)
-   - That's why you see three separate "Phase 1" logs with HTTP requests
+### Analysis Pipeline
 
-2. **Phase 2** appears multiple times because:
-   - It processes the results from each Phase 1 agent
-   - Makes API calls to o1-preview to plan next steps based on each agent's findings
-   - The logs show the HTTP requests to OpenAI's API
+The analysis workflow consists of six distinct phases, each with specific responsibilities:
 
-3. **Phases 3, 4, and 5** only appear once because:
-   - Phase 3: While it uses multiple agents, they're batched into a single phase execution
-   - Phase 4: Single synthesis step using o1-preview
-   - Phase 5: Single consolidation step using Claude
+1. **Initial Discovery (Phase 1)** - Uses Claude agents to perform initial exploration of the project structure, dependencies, and technology stack.
+   
+2. **Methodical Planning (Phase 2)** - Uses OpenAI's o1 model to create a detailed analysis plan based on Phase 1 findings.
+   
+3. **Deep Analysis (Phase 3)** - Uses Claude agents for in-depth analysis of code patterns, dependencies, and architectural decisions.
+   
+4. **Synthesis (Phase 4)** - Uses OpenAI's o1 model to synthesize findings from Phase 3 and provide deeper insights.
+   
+5. **Consolidation (Phase 5)** - Uses Claude to consolidate results from all previous phases into a comprehensive report.
+   
+6. **Final Analysis** - Uses OpenAI's o1 model to provide architectural patterns, system structure mapping, and improvement recommendations.
 
-Here's the count of API calls per phase in one complete run:
-```
-Phase 1: 3 calls (one per agent) to Claude
-Phase 2: Multiple calls to o1-preview for planning
-Phase 3: 1 batch call to Claude (though using multiple agents internally)
-Phase 4: 1 call to o1-preview
-Phase 5: 1 call to Claude
-```
+### Agent System
 
-The key is in this part of `main.py`:
+The tool utilizes two primary agent types to interact with AI models:
+
+1. **ClaudeAgent** - Interfaces with Anthropic's Claude models (specifically `claude-3-7-sonnet-20250219`) for phases 1, 3, and 5.
+
+2. **OpenAIAgent** - Interfaces with OpenAI's o1 model for phases 2, 4, and the final analysis.
+
+Each agent is initialized with specific roles, responsibilities, and prompt templates tailored to their analysis tasks.
+
+### Prompt Management
+
+The system uses centralized prompt templates for each analysis phase, stored in the `config/prompts` directory. This separation allows for easy maintenance and modification of prompts without changing the core logic.
+
+## Module Documentation
+
+### Config Package
+
+The `config` package contains configuration settings and prompt templates for the analysis phases.
+
+#### config/prompts
+
+This directory houses prompt templates for each analysis phase:
+
+- **phase_1_prompts.py**: Templates for the Initial Discovery agents (Structure Agent, Dependency Agent, Tech Stack Agent)
+- **phase_2_prompts.py**: Templates for the Methodical Planning phase
+- **phase_3_prompts.py**: Templates for the Deep Analysis agents (Code Analysis Agent, Dependency Mapping Agent, Architecture Agent, Documentation Agent)
+- **phase_4_prompts.py**: Templates for the Synthesis phase
+- **phase_5_prompts.py**: Templates for the Consolidation phase
+- **final_analysis_prompt.py**: Templates for the Final Analysis
+
+Example prompt structure from `phase_1_prompts.py`:
+
 ```python
-# Phase 1: Multiple parallel agents
-agent_tasks = [agent.analyze(context) for agent in self.phase1_agents]
-results = await asyncio.gather(*agent_tasks)  # This runs them all at once
+PHASE_1_BASE_PROMPT = """You are the {agent_name}, responsible for {agent_role}.
 
-# Later phases: Single execution
-phase3_results = await self.run_phase3(phase2_results, tree)  # One batch
-phase4_results = await self.run_phase4(phase3_results)        # One call
-consolidated_report = await self.run_phase5(all_results)      # One call
+Your specific responsibilities are:
+{agent_responsibilities}
+
+Analyze this project context and provide a detailed report focused on your domain:
+
+{context}
+
+Format your response as a structured report with clear sections and findings."""
+
+# Specific prompts for each agent in Phase 1
+STRUCTURE_AGENT_PROMPT = {
+    "name": "Structure Agent",
+    "role": "analyzing directory and file organization",
+    "responsibilities": [
+        "Analyze directory and file organization",
+        "Map project layout and file relationships",
+        "Identify key architectural components"
+    ]
+}
 ```
 
-So while you see multiple logs, it's still just one run through the phases - Phase 1 just happens to make multiple parallel API calls for efficiency.
+#### config/exclusions.py
 
-Here's how the files are connected:
+Defines sets of directories, files, and file extensions to exclude from analysis:
 
-1. **Main Entry Point**:
-   - `main.py` is the primary entry point that orchestrates the entire analysis process
-   - It uses a 5-phase analysis system combining Claude-3.5-Sonnet and o1-preview models
+```python
+EXCLUDED_DIRS = {
+    'node_modules', '.next', '.git', 'venv', '__pycache__', '_pycache_',
+    'dist', 'build', '.vscode', '.idea', 'coverage',
+    '.pytest_cache', '.mypy_cache', 'env', '.env', '.venv',
+    'site-packages'
+}
 
-2. **Agent System**:
-   - `agents/project_architect_agent.py` and `agents/dependency_analyzer_agent.py` are specialized workers
-   - They're called by `main.py` during different phases of analysis
-   - The agents work independently but are orchestrated by the main analyzer
+EXCLUDED_FILES = {
+    'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+    '.DS_Store', '.env', '.env.local', '.gitignore',
+    'README.md', 'LICENSE', '.eslintrc', '.prettierrc',
+    'tsconfig.json', 'requirements.txt', 'poetry.lock',
+    'Pipfile.lock', '.gitattributes', '.gitconfig', '.gitmodules',
+}
 
-3. **Documentation System**:
-   - `utils/project_doc_generator.py` is the core library for tree generation
-   - `architects/project_doc_generator.py` is a higher-level interface that uses the core library
-   - `utils/monitoring-cursorrules.py` monitors file changes and updates documentation
-
-Here's the flow of how they work together:
-
-```mermaid
-graph TD
-    A[main.py] -->|Orchestrates| B[Project Analysis]
-    B -->|Phase 1| C[Initial Discovery]
-    B -->|Phase 2| D[Methodical Planning]
-    B -->|Phase 3| E[Deep Analysis]
-    B -->|Phase 4| F[Synthesis]
-    B -->|Phase 5| G[Consolidation]
-    
-    C -->|Uses| H[project_architect_agent.py]
-    C -->|Uses| I[dependency_analyzer_agent.py]
-    
-    H -->|Generates Trees| J[utils/project_doc_generator.py]
-    I -->|Analyzes Dependencies| K[Package Files]
-    
-    L[seperate_architects/project_doc_generator.py] -->|Uses| J
-    M[utils/monitoring-cursorrules.py] -->|Monitors| N[.cursorrules]
+EXCLUDED_EXTENSIONS = {
+    '.jpg', '.jpeg', '.png', '.gif', '.ico',
+    '.svg', '.mp4', '.mp3', '.pdf', '.zip',
+    '.woff', '.woff2', '.ttf', '.eot',
+    '.pyc', '.pyo', '.pyd', '.so', '.pkl', '.pickle',
+    '.db', '.sqlite', '.log', '.cache'
+}
 ```
 
-The files that can run independently are:
-1. `utils/monitoring-cursorrules.py` - Can run standalone to monitor project changes
-2. `architects/project_doc_generator.py` - Can run independently to generate documentation
-3. `main.py` - The main entry point that can run the full analysis
+### Core Package
 
-The files that are dependent on others:
-1. `agents/project_architect_agent.py` - Depends on `utils/project_doc_generator.py`
-2. `agents/dependency_analyzer_agent.py` - Used by the main analyzer
-3. `architects/project_doc_generator.py` - Depends on `utils/project_doc_generator.py`
+The `core` package contains the main functionality of the project analyzer.
 
-So while some files can operate independently, they're designed to work together in a cohesive system where `main.py` orchestrates the full analysis workflow.
+#### core/agents
 
-Let me break down each of these files and their purposes:
+This module provides agent classes for interacting with different AI models:
 
-# 1. monitoring-cursorrules.py
-This file is responsible for monitoring and maintaining the `.cursorrules` file in your project. Its main functions are:
+- **base/base_agents.py & base_tools.py**: Base classes for agents and tools
+- **anthropic.py**: Implements the `ClaudeAgent` class for interacting with Anthropic's Claude models
+- **openai.py**: Implements the `OpenAIAgent` class for interacting with OpenAI models
 
-- Watches for file system changes in your project directory
-- Automatically updates the project structure tree in `.cursorrules` when files are added/removed/modified
-- Provides an interactive CLI interface with 4 modes:
-  1. Generate directory tree only
-  2. Generate tree and monitor for changes
-  3. Generate tree and update .cursorrules
-  4. Generate tree, update .cursorrules, and monitor for changes
+Example from `anthropic.py`:
 
-# 2. project_doc_generator.py
-This file is an enhanced version of the documentation generator that:
-
-- Generates directory structure documentation
-- Maintains file comments and metadata
-- Has the same monitoring capabilities as monitoring-cursorrules.py
-- Additionally tracks and preserves comments about files in the tree structure
-- Can output the documentation to markdown files
-
-# 3. project_extractor.py
-This is a sophisticated project analysis tool that:
-
-- Uses a multi-phase analysis approach with both Claude and OpenAI models
-- Has 5 distinct phases:
-  1. Initial Discovery (using Claude agents)
-  2. Methodical Planning (using OpenAI)
-  3. Deep Analysis (using Claude agents)
-  4. Synthesis (using OpenAI)
-  5. Consolidation (using Claude)
-
-The key difference between these files and the agents is:
-
-## Architects vs Agents
-- **Architects** (these files) are standalone tools that provide specific functionality:
-  - monitoring-cursorrules.py → Project structure monitoring
-  - project_doc_generator.py → Documentation generation
-  - project_extractor.py → Project analysis and understanding
-
-- **Agents** (in the agents/ directory) are more like specialized workers:
-  - dependency_analyzer_agent.py → Analyzes project dependencies
-  - project_architect_agent.py → Makes architectural decisions
-
-Here's a diagram to help visualize the relationship:
-
-```mermaid
-graph TD
-    A[Architects] --> B[monitoring-cursorrules.py]
-    A --> C[project_doc_generator.py]
-    A --> D[project_extractor.py]
+```python
+class ClaudeAgent:
+    """
+    Agent class for interacting with Anthropic's Claude models.
     
-    E[Agents] --> F[dependency_analyzer_agent.py]
-    E --> G[project_architect_agent.py]
+    This class provides a structured way to create specialized agents that use
+    Claude models for different analysis tasks.
+    """
     
-    D -->|uses| F
-    D -->|uses| G
+    def __init__(self, name: str, role: str, responsibilities: List[str], prompt_template: str = None):
+        """
+        Initialize a Claude agent with a specific name, role, and responsibilities.
+        
+        Args:
+            name: The name of the agent (e.g., "Structure Agent")
+            role: The role of the agent (e.g., "analyzing directory and file organization")
+            responsibilities: A list of specific tasks the agent is responsible for
+            prompt_template: Optional custom prompt template to use instead of the default
+        """
+        self.name = name
+        self.role = role
+        self.responsibilities = responsibilities
+        self.prompt_template = prompt_template or self._get_default_prompt_template()
 ```
 
-The architects are the tools you interact with directly, while the agents are components that are used by these tools (particularly by project_extractor.py) to perform specific analysis tasks.
+#### core/analysis
 
-Let me break down these agents and their relationships clearly.
+Contains modules for different phases of the project analysis:
 
-First, I'll examine both files to understand their roles:
+- **phase_1.py**: Initial Discovery phase implementation
+- **phase_2.py**: Methodical Planning phase implementation
+- **phase_3.py**: Deep Analysis phase implementation
+- **phase_4.py**: Synthesis phase implementation
+- **phase_5.py**: Consolidation phase implementation
+- **final_analysis.py**: Final Analysis phase implementation
 
-Search files...
+Each phase has a dedicated class that encapsulates its logic. For example, from `phase_1.py`:
 
+```python
+class Phase1Analysis:
+    """
+    Class responsible for Phase 1 (Initial Discovery) of the project analysis.
+    
+    This phase uses Claude agents to perform initial exploration of the project,
+    analyzing directory structure, dependencies, and technology stack.
+    """
+    
+    def __init__(self):
+        """Initialize the Phase 1 analysis with the required agents."""
+        # Phase 1: Initial Discovery Agents
+        self.agents = [
+            ClaudeAgent(
+                name=STRUCTURE_AGENT_PROMPT["name"],
+                role=STRUCTURE_AGENT_PROMPT["role"],
+                responsibilities=STRUCTURE_AGENT_PROMPT["responsibilities"],
+                prompt_template=PHASE_1_BASE_PROMPT
+            ),
+            # Other agents...
+        ]
+    
+    async def run(self, tree: List[str], package_info: Dict) -> Dict:
+        """
+        Run the Initial Discovery Phase using Claude-3.7-Sonnet agents.
+        """
+        context = {
+            "tree_structure": tree,
+            "package_info": package_info
+        }
+        agent_tasks = [agent.analyze(context) for agent in self.agents]
+        results = await asyncio.gather(*agent_tasks)
+        return {
+            "phase": "Initial Discovery",
+            "findings": results
+        }
+```
 
-Let me explain the project structure and how the agents and architects work together:
+#### core/interfaces
 
-This is a sophisticated project analysis system that uses AI to analyze codebases. Here's how it works:
+This directory contains model definitions and type definitions for agents, phases, and tools.
 
-### 1. Agents vs Architects
+### Utils Package
 
-**Agents** are specialized workers that perform specific analysis tasks:
-- `dependency_analyzer_agent.py`: Analyzes project dependencies, versions, and compatibility
-- `project_architect_agent.py`: Makes high-level architectural decisions and categorizes project components
+The `utils` package contains utility functions and tools for the project analyzer.
 
-**Architects** are higher-level tools that orchestrate the agents and provide specific functionality:
-- `monitoring-cursorrules.py`: Monitors and maintains the `.cursorrules` file
-- `project_doc_generator.py`: Generates project documentation
-- `project_extractor.py`: Runs the complete project analysis workflow
+#### utils/file_creation
 
-### 2. The Analysis Flow
+Contains utilities for creating and managing specific files:
 
-The system uses a sophisticated 5-phase analysis process:
+- **cursorignore.py**: Manages `.cursorignore` files that define patterns to exclude from analysis
+- **cursorrules.py**: Manages `.cursorrules` files that define project standards
+- **phases_output.py**: Handles saving the outputs of analysis phases to files
 
-1. **Initial Discovery** (Using Claude-3.5-Sonnet)
-   - Structure Agent: Analyzes directory organization
-   - Dependency Agent: Examines package dependencies
-   - Tech Stack Agent: Identifies technologies used
+Example from `phases_output.py`:
 
-2. **Methodical Planning** (Using o1-preview)
-   - Processes agent findings
-   - Creates detailed analysis plans
+```python
+def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
+    """Save each phase's output to separate markdown files."""
+    output_dir = directory / "phases_output"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-3. **Deep Analysis** (Using Claude-3.5-Sonnet)
-   - Code Analysis Agent: Examines logic patterns
-   - Dependency Mapping Agent: Maps file relationships
-   - Architecture Agent: Studies design patterns
-   - Documentation Agent: Creates documentation
+    # Save the results of each phase to a separate Markdown file
+    with open(output_dir / "phase1_discovery.md", "w", encoding="utf-8") as f:
+        f.write("# Phase 1: Initial Discovery (Claude-3.7-Sonnet)\n\n")
+        f.write("## Agent Findings\n\n")
+        f.write("```json\n")
+        f.write(json.dumps(analysis_data["phase1"], indent=2))
+        f.write("\n```\n")
+    
+    # Similar code for other phases...
+```
 
-4. **Synthesis** (Using o1-preview)
-   - Reviews and synthesizes findings
-   - Updates analysis directions
+#### utils/tools
 
-5. **Consolidation** (Using Claude-3.5-Sonnet)
-   - Combines all findings
-   - Prepares final documentation
+Contains tools for the project analyzer:
 
-### 3. Key Features
+- **tree_generator.py**: Enhanced tree generation functionality for visualizing directory structures
 
-- Uses modern AI models (claude-3-7-sonnet-20250219 and o1-preview)
-- Real-time progress tracking with rich console output
-- Comprehensive dependency analysis
-- Automatic documentation generation
-- Project structure monitoring
-- Security-first approach (no storage of sensitive data)
+This tool provides advanced directory visualization with file type icons and customizable exclusion rules:
 
-The main goal is to provide comprehensive project analysis and maintain the `.cursorrules` file, which defines project standards and AI behavior guidelines for your codebase.
+```python
+def get_project_tree(directory: Path, max_depth: int = 4) -> List[str]:
+    """
+    Generate a tree structure for a project directory.
+    This is the main function to be used from other modules.
+    """
+    # Generate the tree
+    tree = generate_tree(
+        directory, 
+        max_depth=max_depth,
+        exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+        exclude_patterns=DEFAULT_EXCLUDE_PATTERNS
+    )
+    
+    # Add the key
+    key = generate_key(tree)
+    
+    # Return the complete tree with key
+    if key:
+        return key + tree
+    return tree
+```
+
+## Main Application Flow
+
+The main entry point is `main.py`, which implements the command-line interface using the `click` library and orchestrates the analysis process:
+
+1. Parse command-line arguments for project path and output file
+2. Initialize the `ProjectAnalyzer` class with the project directory
+3. Execute the analysis phases sequentially:
+   - Generate project tree
+   - Run Phase 1: Initial Discovery
+   - Run Phase 2: Methodical Planning
+   - Run Phase 3: Deep Analysis
+   - Run Phase 4: Synthesis
+   - Run Phase 5: Consolidation
+   - Run Final Analysis
+4. Save the analysis results to files:
+   - Complete analysis to the main output file
+   - Individual phase outputs to separate files in a `phases_output` directory
+
+Key code from `main.py`:
+
+```python
+class ProjectAnalyzer:
+    def __init__(self, directory: Path):
+        self.directory = directory
+        # Initialize result storage
+        self.phase1_results = {}
+        self.phase2_results = {}
+        self.phase3_results = {}
+        self.phase4_results = {}
+        self.consolidated_report = {}
+        self.final_analysis = {}
+        
+        # Initialize all phase analyzers
+        self.phase1_analyzer = Phase1Analysis()
+        self.phase2_analyzer = Phase2Analysis(model="o1")
+        self.phase3_analyzer = Phase3Analysis()
+        self.phase4_analyzer = Phase4Analysis(model="o1")
+        self.phase5_analyzer = Phase5Analysis(model="claude-3-7-sonnet-20250219")
+        self.final_analyzer = FinalAnalysis(model="o1")
+
+    async def analyze(self) -> str:
+        """Run complete analysis workflow"""
+        start_time = time.time()
+        
+        with Progress(...) as progress:
+            # Run each phase sequentially
+            task1 = progress.add_task("[green]Phase 1: Initial Discovery...", total=None)
+            tree = get_project_tree(self.directory)
+            package_info = {}
+            self.phase1_results = await self.run_phase1(tree, package_info)
+            progress.update(task1, completed=True)
+            
+            # Other phases follow a similar pattern...
+        
+        # Format and return the final output
+        analysis = [
+            f"Project Analysis Report for: {self.directory}",
+            "=" * 50 + "\n",
+            # Content from each phase...
+        ]
+        
+        return "\n".join(analysis)
+```
+
+## Dependencies
+
+The project has the following external dependencies:
+
+```
+anthropic>=0.18.1    # For interacting with Anthropic's Claude models
+typer[all]>=0.9.0    # For command-line interface
+rich>=13.7.0         # For enhanced terminal output
+pathlib>=1.0.1       # For path manipulation
+```
+
+## Usage Instructions
+
+To use CursorRules Architect:
+
+1. Ensure you have valid API keys for OpenAI and Anthropic with access to the required models
+2. Set your API keys as environment variables:
+   ```bash
+   export OPENAI_API_KEY='your-openai-api-key'
+   export ANTHROPIC_API_KEY='your-anthropic-api-key'
+   ```
+3. Run the analysis on a project:
+   ```bash
+   python main.py --path /path/to/your/project --output output_file.txt
+   ```
+
+Arguments:
+- `--path` or `-p`: Path to the project directory to analyze
+- `--output` or `-o`: Optional output file path (defaults to projectname_analysis.txt)
+
+## Contributing Guidelines
+
+Detailed contribution guidelines are available in the `CONTRIBUTING.md` file. Key points:
+
+1. **Development Setup**:
+   - Python 3.8 or higher required
+   - API keys for OpenAI and Anthropic required
+   - Install dependencies with `pip install -r requirements.txt`
+
+2. **Code Standards**:
+   - Follow PEP 8 guidelines
+   - Use type hints
+   - Include docstrings for functions, classes, and modules
+
+3. **Git Workflow**:
+   - Fork the repository
+   - Create a feature branch
+   - Submit a pull request
+
+4. **Pull Request Guidelines**:
+   - Ensure code passes tests
+   - Provide a clear description of changes
+   - Address any merge conflicts
+
+For more details, refer to the full `CONTRIBUTING.md` file in the repository.
+
+---
+
+<tree_structure>
+.
+├── .DS_Store
+├── .cursor
+│   ├── rules
+│   │   ├── claude-3-7-sonnet-reasoning.mdc
+├── .cursorignore
+├── .cursorrules
+├── .env
+├── CONTRIBUTING.md
+├── README.md
+├── config
+│   ├── __init__.py
+│   ├── agents.py
+│   ├── exclusions.py
+│   ├── prompts
+│   │   ├── __init__.py
+│   │   ├── final_analysis_prompt.py
+│   │   ├── phase_1_prompts.py
+│   │   ├── phase_2_prompts.py
+│   │   ├── phase_4_prompts.py
+│   │   ├── phase_5_prompts.py
+├── core
+│   ├── __init__.py
+│   ├── agents
+│   │   ├── .DS_Store
+│   │   ├── __init__.py
+│   │   ├── anthropic.py
+│   │   ├── base.py
+│   │   ├── openai.py
+│   ├── analysis
+│   │   ├── __init__.py
+│   │   ├── final_analysis.py
+│   │   ├── phase_1.py
+│   │   ├── phase_2.py
+│   │   ├── phase_3.py
+│   │   ├── phase_4.py
+│   │   ├── phase_5.py
+│   │   ├── phases_output
+│   │   │   ├── complete_report.md
+│   │   │   ├── final_analysis.md
+│   │   │   ├── phase1_discovery.md
+│   │   │   ├── phase2_planning.md
+│   │   │   ├── phase3_analysis.md
+│   │   │   ├── phase4_synthesis.md
+│   │   │   ├── phase5_consolidation.md
+│   ├── types
+│   │   ├── __init__.py
+│   │   ├── agent_config.py
+├── main.py
+├── requirements.txt
+├── tests
+│   ├── final_analysis
+│   ├── phase_1
+│   ├── phase_2
+│   │   ├── output
+│   │   ├── parser.py
+│   │   ├── run_phase2.py
+│   │   ├── test_doc.md
+│   ├── phase_3
+│   │   ├── input
+│   │   │   ├── phase2_parsed_20250307_143503.json
+│   │   ├── output
+│   │   ├── run_phase3.py
+│   ├── phase_4
+│   ├── phase_5
+│   ├── utils
+│   │   ├── run_tree_generator.py
+├── utils
+│   ├── .DS_Store
+│   ├── file_creation
+│   │   ├── cursorignore.py
+│   │   ├── phases_output.py
+│   ├── tools
+│   │   ├── agent_parser.py
+│   │   ├── file_retriever.py
+│   │   ├── tree_generator.py
+</tree_structure>

@@ -1,37 +1,50 @@
 #!/usr/bin/env python3
-import os
-import argparse
-from pathlib import Path
-from typing import List, Set, Dict
-from datetime import datetime
-import fnmatch
-from collections import defaultdict
+"""
+utils/tools/tree_generator.py
 
-# Default exclusion sets
-DEFAULT_EXCLUDE_DIRS = {
-    'node_modules', '__pycache__', '.next', 'build', 'dist',
-    'coverage', '.pytest_cache', '.sass-cache', '.turbo',
-    'out', '.output', '.nuxt', '.cache', '.parcel-cache',
-    'vendor', 'tmp', 'temp', '.temp', '.idea', '.vscode',
-    'venv', '.venv', 'env', '.env', '.tox', 'eggs',
-    '.mypy_cache', '.ruff_cache', '.pytest_cache',
-    'htmlcov', '.coverage', '.hypothesis', '.git'
-}
+This module provides enhanced tree generation functionality for visualizing
+directory structures with file type icons and customizable exclusion rules.
 
-DEFAULT_EXCLUDE_PATTERNS = {
-    '*.svg', '*.png', '*.jpg', '*.jpeg', '*.gif', '*.ico', '*.webp',  # Images
-    '*.lock', '*.log',  # Lock and log files
-    '*.map', '*.min.js', '*.min.css',  # Generated/minified files
-    '*.woff', '*.woff2', '*.ttf', '*.eot',  # Fonts
-    '*.mp4', '*.webm', '*.ogg', '*.mp3', '*.wav',  # Media files
-    '*.pdf', '*.doc', '*.docx', '*.xls', '*.xlsx',  # Documents
-    '*.pyc', '*.pyo', '*.pyd',  # Python compiled files
-    '.DS_Store',  # System files
-    'LICENSE', 'LICENSE.*',  # License files
-    '.cursorrules',  # Cursor rules output
-    '.gitignore',  # Git ignore
-    '.dockerignore'  # Docker ignore
-}
+It is used by the main analysis process to generate visual representations
+of project structures.
+"""
+
+# ====================================================
+# Importing Necessary Libraries
+# This section imports external libraries that the script needs to function.
+# Each library provides specific functionalities used later in the code.
+# ====================================================
+
+import os  # Provides functions for interacting with the operating system
+from pathlib import Path  # Offers a way to interact with files and directories in a more object-oriented manner
+from typing import List, Set, Dict, Optional  # Used for type hinting, making code easier to understand
+import fnmatch  # Provides support for Unix shell-style wildcards
+from collections import defaultdict  # Provides a convenient way to create dictionaries where keys have default values
+from config.exclusions import EXCLUDED_DIRS, EXCLUDED_FILES, EXCLUDED_EXTENSIONS  # Importing predefined exclusion lists
+
+# ====================================================
+# Setting Up Default Exclusion Constants
+# These constants define which directories, files, and file extensions
+# should be ignored by default when generating the tree structure.
+# ====================================================
+
+# Use the centralized exclusion constants
+DEFAULT_EXCLUDE_DIRS = EXCLUDED_DIRS
+
+# Combine excluded files and patterns based on extensions
+DEFAULT_EXCLUDE_PATTERNS = set()
+# Add excluded files
+for file in EXCLUDED_FILES:
+    DEFAULT_EXCLUDE_PATTERNS.add(file)
+# Add excluded extensions as patterns
+for ext in EXCLUDED_EXTENSIONS:
+    DEFAULT_EXCLUDE_PATTERNS.add(f'*{ext}')
+
+# ====================================================
+# Defining File Type Icons and Descriptions
+# This section maps file extensions and specific filenames to emoji icons
+# and provides human-readable descriptions for each icon.
+# ====================================================
 
 # File type emojis
 FILE_ICONS: Dict[str, str] = {
@@ -83,8 +96,24 @@ ICON_DESCRIPTIONS = {
     '️': 'Error/Warning'
 }
 
+# ====================================================
+# Function Definitions
+# This section contains all the functions that perform the core logic
+# of the script, such as getting file icons, checking exclusions,
+# generating the tree, creating a key, and saving the output.
+# ====================================================
+
+
 def get_file_icon(path: Path) -> str:
-    """Get the appropriate emoji icon for a file."""
+    """
+    Get the appropriate emoji icon for a file.
+    
+    Args:
+        path: Path object to get icon for
+        
+    Returns:
+        str: Emoji icon representing the file type
+    """
     if path.is_dir():
         return '📁'
     
@@ -99,6 +128,7 @@ def get_file_icon(path: Path) -> str:
     
     # Default file icon
     return '📄'
+
 
 def should_exclude(item: Path, exclude_dirs: Set[str], exclude_patterns: Set[str]) -> bool:
     """
@@ -123,11 +153,14 @@ def should_exclude(item: Path, exclude_dirs: Set[str], exclude_patterns: Set[str
             
     return False
 
+
 def generate_tree(
-    path: str,
+    path: Path,
     prefix: str = "",
-    exclude_dirs: Set[str] = None,
-    exclude_patterns: Set[str] = None
+    exclude_dirs: Optional[Set[str]] = None,
+    exclude_patterns: Optional[Set[str]] = None,
+    max_depth: int = 4,
+    current_depth: int = 0
 ) -> List[str]:
     """
     Generate a tree structure of the specified directory path.
@@ -137,6 +170,8 @@ def generate_tree(
         prefix: Current prefix for the tree line (used for recursion)
         exclude_dirs: Set of directory names to exclude
         exclude_patterns: Set of patterns to exclude (e.g., "*.pyc")
+        max_depth: Maximum depth to traverse
+        current_depth: Current depth in the traversal
     
     Returns:
         List of strings representing the tree structure
@@ -145,9 +180,15 @@ def generate_tree(
         exclude_dirs = DEFAULT_EXCLUDE_DIRS
     if exclude_patterns is None:
         exclude_patterns = DEFAULT_EXCLUDE_PATTERNS
+    
+    # If we've reached max depth, indicate there's more
+    if current_depth >= max_depth:
+        return [f"{prefix}└── ... (max depth reached)"]
         
     tree = []
-    path = Path(path)
+    
+    if isinstance(path, str):
+        path = Path(path)
     
     try:
         # Get all items in the directory
@@ -173,7 +214,9 @@ def generate_tree(
                         item,
                         prefix + extension,
                         exclude_dirs,
-                        exclude_patterns
+                        exclude_patterns,
+                        max_depth,
+                        current_depth + 1
                     )
                 )
     except PermissionError:
@@ -183,8 +226,17 @@ def generate_tree(
     
     return tree
 
+
 def generate_key(tree_content: List[str]) -> List[str]:
-    """Generate a key of emojis used in the tree."""
+    """
+    Generate a key of emojis used in the tree.
+    
+    Args:
+        tree_content: List of strings containing the tree structure
+        
+    Returns:
+        List of strings representing the key
+    """
     used_icons = set()
     
     # Extract all emojis used in the tree
@@ -211,7 +263,8 @@ def generate_key(tree_content: List[str]) -> List[str]:
     
     return key_lines + [""]  # Add empty line after key
 
-def save_tree_to_file(tree_content: List[str], path: str) -> str:
+
+def save_tree_to_file(tree_content: List[str], path: Path) -> str:
     """
     Save the tree structure to a .cursorrules file.
     
@@ -222,10 +275,15 @@ def save_tree_to_file(tree_content: List[str], path: str) -> str:
     Returns:
         The path to the saved file
     """
-    output_file = Path(path) / ".cursorrules"
+    output_file = path / ".cursorrules"
+    
+    # Remove delimiters if they exist
+    filtered_content = tree_content
+    if len(tree_content) >= 2 and tree_content[0] == "<project_structure>" and tree_content[-1] == "</project_structure>":
+        filtered_content = tree_content[1:-1]
     
     # Generate key for used icons
-    key = generate_key(tree_content)
+    key = generate_key(filtered_content)
     
     header = [
         "<!-- BEGIN_STRUCTURE -->",
@@ -244,52 +302,41 @@ def save_tree_to_file(tree_content: List[str], path: str) -> str:
     ]
     
     with output_file.open('w', encoding='utf-8') as f:
-        f.write('\n'.join(header + tree_content + footer))
+        f.write('\n'.join(header + filtered_content + footer))
     
     return str(output_file)
 
-def main():
-    parser = argparse.ArgumentParser(description='Generate a directory tree structure.')
-    parser.add_argument('path', nargs='?', default='.',
-                       help='Path to generate tree for (default: current directory)')
-    parser.add_argument('--exclude-dirs', nargs='+', default=None,
-                       help='Additional directories to exclude')
-    parser.add_argument('--exclude-patterns', nargs='+', default=None,
-                       help='Additional patterns to exclude (e.g., *.pyc)')
-    parser.add_argument('--show-excluded', action='store_true',
-                       help='Show what files and directories are being excluded')
-    
-    args = parser.parse_args()
-    
-    # Combine default and custom exclusions if provided
-    exclude_dirs = DEFAULT_EXCLUDE_DIRS.union(set(args.exclude_dirs or []))
-    exclude_patterns = DEFAULT_EXCLUDE_PATTERNS.union(set(args.exclude_patterns or []))
-    
-    if args.show_excluded:
-        print("\nExcluded Directories:")
-        print('\n'.join(f"- {d}" for d in sorted(exclude_dirs)))
-        print("\nExcluded Patterns:")
-        print('\n'.join(f"- {p}" for p in sorted(exclude_patterns)))
-        print()
-    
-    # Generate and print the tree
-    path = os.path.abspath(args.path)
-    print(f"\nDirectory Tree for: {path}\n")
-    
-    tree = generate_tree(path, exclude_dirs=exclude_dirs, exclude_patterns=exclude_patterns)
-    
-    # Generate and print key
-    key = generate_key(tree)
-    if key:
-        print('\n'.join(key))
-    
-    # Print tree
-    print('\n'.join(tree))
-    
-    # Save to .cursorrules file
-    output_file = save_tree_to_file(tree, path)
-    print(f"\nTree structure saved to: {output_file}")
 
-if __name__ == '__main__':
-    main()
+def get_project_tree(directory: Path, max_depth: int = 4) -> List[str]:
+    """
+    Generate a tree structure for a project directory.
+    This is the main function to be used from other modules.
+    
+    Args:
+        directory: The project directory path
+        max_depth: Maximum depth to traverse
         
+    Returns:
+        List of strings representing the tree structure with delimiters
+    """
+    # Generate the tree
+    tree = generate_tree(
+        directory, 
+        max_depth=max_depth,
+        exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+        exclude_patterns=DEFAULT_EXCLUDE_PATTERNS
+    )
+    
+    # Add the key
+    key = generate_key(tree)
+    
+    # Prepare the complete tree with key
+    if key:
+        complete_tree = key + tree
+    else:
+        complete_tree = tree
+    
+    # Add the delimiters
+    delimited_tree = ["<project_structure>"] + complete_tree + ["</project_structure>"]
+    
+    return delimited_tree

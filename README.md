@@ -290,17 +290,17 @@ cursorrules-architect/
 │   │   ├── phase_3.py           # Deep Analysis phase
 │   │   ├── phase_4.py           # Synthesis phase
 │   │   └── phase_5.py           # Consolidation phase
-│   └── types/                   # Type definitions
-│       └── agent_config.py      # Agent configuration types
-├── utils/                       # Utility functions
-│   ├── file_creation/           # File creation utilities
-│   │   ├── cursorignore.py      # .cursorignore management
-│   │   ├── cursorrules.py       # .cursorrules management
-│   │   └── phases_output.py     # Phase output saving
-│   └── tools/                   # Tool utilities
-│       ├── agent_parser.py      # Parser for Phase 2 output
-│       ├── file_retriever.py    # File content retrieval
-│       └── tree_generator.py    # Directory tree generation
+│   ├── types/                   # Type definitions
+│   │   └── agent_config.py      # Agent configuration types
+│   └── utils/                   # Utility functions and tools
+│       ├── file_creation/           # File creation utilities
+│       │   ├── cursorignore.py      # .cursorignore management
+│       │   ├── cursorrules.py       # .cursorrules management
+│       │   └── phases_output.py     # Phase output saving
+│       └── tools/                   # Tool utilities
+│           ├── agent_parser.py      # Parser for Phase 2 output
+│           ├── file_retriever.py    # File content retrieval
+│           └── tree_generator.py    # Directory tree generation
 ├── main.py                      # Main entry point
 └── requirements.txt             # Project dependencies
 ```

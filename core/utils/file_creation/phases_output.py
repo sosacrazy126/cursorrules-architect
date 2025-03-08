@@ -101,7 +101,7 @@ def save_phase_outputs(directory: Path, analysis_data: dict) -> None:
     exclude_dirs = ["phases_output", "__pycache__", ".git", ".vscode", ".cursor"]
     
     # Get the project tree without the excluded directories
-    from utils.tools.tree_generator import generate_tree, DEFAULT_EXCLUDE_DIRS, DEFAULT_EXCLUDE_PATTERNS
+    from core.utils.tools.tree_generator import generate_tree, DEFAULT_EXCLUDE_DIRS, DEFAULT_EXCLUDE_PATTERNS
     
     # Create a custom set of exclude directories by combining defaults with our additions
     custom_exclude_dirs = DEFAULT_EXCLUDE_DIRS.union(set(exclude_dirs))

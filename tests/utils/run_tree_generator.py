@@ -20,7 +20,7 @@ from pathlib import Path
 # Add the project root to the path so we can import our modules
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from utils.tools.tree_generator import get_project_tree
+from core.utils.tools.tree_generator import get_project_tree
 
 
 def main():

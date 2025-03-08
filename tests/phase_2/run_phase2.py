@@ -19,7 +19,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.analysis.phase_2 import Phase2Analysis
-from utils.tools.agent_parser import parse_agents_from_phase2
+from core.utils.tools.agent_parser import parse_agents_from_phase2
 
 # Sample Phase 1 results to pass to Phase 2
 SAMPLE_PHASE1_RESULTS = {

@@ -18,7 +18,7 @@ from pathlib import Path
 # Add the project root to the path so we can import the modules
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from utils.tools.agent_parser import (
+from core.utils.tools.agent_parser import (
     parse_agents_from_phase2,
     get_agent_file_mapping,
     get_all_file_assignments,

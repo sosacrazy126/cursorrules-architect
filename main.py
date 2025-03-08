@@ -21,9 +21,9 @@ from openai import OpenAI  # For interacting with the OpenAI API
 from anthropic import Anthropic  # For interacting with the Anthropic API
 import asyncio  # For asynchronous programming (running multiple tasks concurrently)
 from config.exclusions import EXCLUDED_DIRS, EXCLUDED_FILES, EXCLUDED_EXTENSIONS  # Import exclusion lists from config
-from utils.file_creation.phases_output import save_phase_outputs  # Import the save_phase_outputs function
-from utils.file_creation.cursorignore import create_cursorignore  # Import the create_cursorignore function
-from utils.tools.tree_generator import get_project_tree  # Import the tree generator function
+from core.utils.file_creation.phases_output import save_phase_outputs  # Import the save_phase_outputs function
+from core.utils.file_creation.cursorignore import create_cursorignore  # Import the create_cursorignore function
+from core.utils.tools.tree_generator import get_project_tree  # Import the tree generator function
 from core.agents.anthropic import ClaudeAgent  # Import the ClaudeAgent class
 from core.agents.openai import OpenAIAgent  # Import the OpenAIAgent class
 # Import all phase analysis classes from the core.analysis package

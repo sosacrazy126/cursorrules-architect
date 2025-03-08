@@ -20,7 +20,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.analysis.phase_3 import Phase3Analysis
-from utils.tools.tree_generator import get_project_tree
+from core.utils.tools.tree_generator import get_project_tree
 
 # Directory paths
 INPUT_DIR = Path(__file__).parent / "input"

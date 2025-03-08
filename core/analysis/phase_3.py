@@ -15,7 +15,7 @@ import json
 from typing import Dict, List, Any
 from pathlib import Path
 from core.agents.anthropic import ClaudeAgent
-from utils.tools.file_retriever import get_filtered_formatted_contents
+from core.utils.tools.file_retriever import get_filtered_formatted_contents
 
 # ====================================================
 # Phase 3 Analysis Class

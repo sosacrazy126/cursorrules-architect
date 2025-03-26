@@ -107,6 +107,19 @@ DEEPSEEK_REASONER = ModelConfig(
     reasoning=ReasoningMode.ENABLED  # Always enabled for reasoner
 )
 
+# Gemini configurations
+GEMINI_BASIC = ModelConfig(
+    provider=ModelProvider.GEMINI,
+    model_name="gemini-2.0-flash",
+    reasoning=ReasoningMode.DISABLED
+)
+
+GEMINI_WITH_REASONING = ModelConfig(
+    provider=ModelProvider.GEMINI,
+    model_name="gemini-2.5-pro-exp-03-25",
+    reasoning=ReasoningMode.ENABLED
+)
+
 # ====================================================
 # Phase Model Configuration
 # Define which model to use for each phase.
@@ -118,13 +131,13 @@ MODEL_CONFIG = {
     "phase1": CLAUDE_BASIC,
     
     # Phase 2: Methodical Planning
-    "phase2": O1_HIGH,
+    "phase2": GEMINI_WITH_REASONING,
     
     # Phase 3: Deep Analysis
-    "phase3": CLAUDE_BASIC,
+    "phase3": O3_MINI_HIGH,
     
     # Phase 4: Synthesis
-    "phase4": CLAUDE_WITH_REASONING,
+    "phase4": O1_HIGH,
     
     # Phase 5: Consolidation
     "phase5": DEEPSEEK_REASONER,
@@ -152,6 +165,7 @@ def get_architect_for_phase(phase: str, **kwargs) -> Any:
     from core.agents.anthropic import AnthropicArchitect
     from core.agents.openai import OpenAIArchitect
     from core.agents.deepseek import DeepSeekArchitect
+    from core.agents.gemini import GeminiArchitect
     
     # Get model configuration for the phase
     config = MODEL_CONFIG.get(phase)
@@ -176,6 +190,12 @@ def get_architect_for_phase(phase: str, **kwargs) -> Any:
         # DeepSeek Reasoner has fixed parameters
         return DeepSeekArchitect(
             **kwargs  # Only pass the kwargs, other params are fixed in DeepSeekArchitect
+        )
+    elif config.provider == ModelProvider.GEMINI:
+        return GeminiArchitect(
+            model_name=config.model_name,
+            reasoning=config.reasoning,
+            **kwargs
         )
     else:
         raise ValueError(f"Unknown model provider: {config.provider}")

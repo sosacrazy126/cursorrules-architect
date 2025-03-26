@@ -13,7 +13,7 @@ It defines the agents and methods needed for the initial exploration of the proj
 import asyncio  # For running asynchronous tasks concurrently.
 import json     # For handling JSON data.
 from typing import Dict, List  # For type hinting.
-from core.agents.anthropic import ClaudeAgent, AnthropicArchitect  # The ClaudeAgent class for interacting with the Anthropic API.
+from core.agents.anthropic import AnthropicArchitect  # The AnthropicArchitect class for interacting with the Anthropic API.
 from config.prompts.phase_1_prompts import ( # Prompts used for configuring the agents in Phase 1.
     PHASE_1_BASE_PROMPT,
     STRUCTURE_AGENT_PROMPT,
@@ -21,6 +21,8 @@ from config.prompts.phase_1_prompts import ( # Prompts used for configuring the 
     TECH_STACK_AGENT_PROMPT,
 )
 from config.agents import get_architect_for_phase  # Function to get the appropriate architect for a phase
+import logging  # For logging information about the execution
+from rich import print
 
 # ====================================================
 # Phase 1 Analysis Class
@@ -31,7 +33,7 @@ class Phase1Analysis:
     """
     Class responsible for Phase 1 (Initial Discovery) of the project analysis.
     
-    This phase uses Claude agents to perform initial exploration of the project,
+    This phase uses Anthropic models to perform initial exploration of the project,
     analyzing directory structure, dependencies, and technology stack.
     """
     
@@ -39,63 +41,34 @@ class Phase1Analysis:
     # Initialization
     # Sets up the agents required for the initial discovery.
     # ----------------------------------------------------
-    def __init__(self, use_new_architecture: bool = False):
+    def __init__(self):
         """
-        Initialize the Phase 1 analysis with the required agents.
-        
-        Args:
-            use_new_architecture: Whether to use the new Architect architecture (default: False)
+        Initialize the Phase 1 analysis with the required architects.
         """
-        self.use_new_architecture = use_new_architecture
-        
-        if use_new_architecture:
-            # Use the new Architect architecture
-            self.architects = [
-                get_architect_for_phase(
-                    "phase1",
-                    name=STRUCTURE_AGENT_PROMPT["name"],
-                    role=STRUCTURE_AGENT_PROMPT["role"],
-                    responsibilities=STRUCTURE_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                ),
-                get_architect_for_phase(
-                    "phase1",
-                    name=DEPENDENCY_AGENT_PROMPT["name"],
-                    role=DEPENDENCY_AGENT_PROMPT["role"],
-                    responsibilities=DEPENDENCY_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                ),
-                get_architect_for_phase(
-                    "phase1",
-                    name=TECH_STACK_AGENT_PROMPT["name"],
-                    role=TECH_STACK_AGENT_PROMPT["role"],
-                    responsibilities=TECH_STACK_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                )
-            ]
-        else:
-            # Phase 1: Initial Discovery Agents. These agents are responsible for
-            # the initial exploration of the project.
-            self.agents = [
-                ClaudeAgent( # Agent for analyzing project structure.
-                    name=STRUCTURE_AGENT_PROMPT["name"],
-                    role=STRUCTURE_AGENT_PROMPT["role"],
-                    responsibilities=STRUCTURE_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                ),
-                ClaudeAgent( # Agent for analyzing project dependencies.
-                    name=DEPENDENCY_AGENT_PROMPT["name"],
-                    role=DEPENDENCY_AGENT_PROMPT["role"],
-                    responsibilities=DEPENDENCY_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                ),
-                ClaudeAgent( # Agent for analyzing the technology stack.
-                    name=TECH_STACK_AGENT_PROMPT["name"],
-                    role=TECH_STACK_AGENT_PROMPT["role"],
-                    responsibilities=TECH_STACK_AGENT_PROMPT["responsibilities"],
-                    prompt_template=PHASE_1_BASE_PROMPT
-                )
-            ]
+        # Use the Architect architecture
+        self.architects = [
+            get_architect_for_phase(
+                "phase1",
+                name=STRUCTURE_AGENT_PROMPT["name"],
+                role=STRUCTURE_AGENT_PROMPT["role"],
+                responsibilities=STRUCTURE_AGENT_PROMPT["responsibilities"],
+                prompt_template=PHASE_1_BASE_PROMPT
+            ),
+            get_architect_for_phase(
+                "phase1",
+                name=DEPENDENCY_AGENT_PROMPT["name"],
+                role=DEPENDENCY_AGENT_PROMPT["role"],
+                responsibilities=DEPENDENCY_AGENT_PROMPT["responsibilities"],
+                prompt_template=PHASE_1_BASE_PROMPT
+            ),
+            get_architect_for_phase(
+                "phase1",
+                name=TECH_STACK_AGENT_PROMPT["name"],
+                role=TECH_STACK_AGENT_PROMPT["role"],
+                responsibilities=TECH_STACK_AGENT_PROMPT["responsibilities"],
+                prompt_template=PHASE_1_BASE_PROMPT
+            )
+        ]
     
     # ----------------------------------------------------
     # Run Method
@@ -118,14 +91,23 @@ class Phase1Analysis:
             "package_info": package_info
         }
         
-        if self.use_new_architecture:
-            # Use the new Architect architecture
-            architect_tasks = [architect.analyze(context) for architect in self.architects]
-            results = await asyncio.gather(*architect_tasks)
-        else:
-            # Use the legacy agent architecture
-            agent_tasks = [agent.analyze(context) for agent in self.agents]
-            results = await asyncio.gather(*agent_tasks)
+        logging.info("[bold]Phase 1:[/bold] Starting analysis with 3 agents")
+        
+        # Use the Architect architecture - create a dictionary to map each architect to its index
+        architect_indices = {architect: i for i, architect in enumerate(self.architects)}
+        
+        # Run each architect in parallel with its own context
+        async def run_architect_with_logging(architect, ctx):
+            agent_num = architect_indices[architect] + 1
+            logging.info(f"[bold cyan]Agent {agent_num}:[/bold cyan] {architect.name} starting analysis")
+            result = await architect.analyze(ctx)
+            logging.info(f"[bold green]Agent {agent_num}:[/bold green] {architect.name} completed analysis")
+            return result
+        
+        architect_tasks = [run_architect_with_logging(architect, context) for architect in self.architects]
+        results = await asyncio.gather(*architect_tasks)
+        
+        logging.info("[bold green]Phase 1:[/bold green] All agents have completed their analysis")
         
         # Return the results with phase information.
         return {

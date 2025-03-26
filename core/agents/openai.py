@@ -66,7 +66,8 @@ class OpenAIArchitect(BaseArchitect):
         temperature: Optional[float] = None,
         name: Optional[str] = None,
         role: Optional[str] = None,
-        responsibilities: Optional[List[str]] = None
+        responsibilities: Optional[List[str]] = None,
+        prompt_template: Optional[str] = None
     ):
         """
         Initialize an OpenAI architect with a specific model.
@@ -78,6 +79,7 @@ class OpenAIArchitect(BaseArchitect):
             name: Optional name for specialized roles
             role: Optional role description
             responsibilities: Optional list of responsibilities
+            prompt_template: Optional custom prompt template to use
         """
         # Set default reasoning based on model
         if reasoning is None:
@@ -101,6 +103,42 @@ class OpenAIArchitect(BaseArchitect):
             role=role,
             responsibilities=responsibilities
         )
+        
+        # Store the prompt template
+        self.prompt_template = prompt_template or self._get_default_prompt_template()
+    
+    def _get_default_prompt_template(self) -> str:
+        """Get the default prompt template for the agent."""
+        return """You are {agent_name}, responsible for {agent_role}.
+        
+Your specific responsibilities are:
+{agent_responsibilities}
+
+Analyze this project context and provide a detailed report focused on your domain:
+
+{context}
+
+Format your response as a structured report with clear sections and findings."""
+    
+    def format_prompt(self, context: Dict) -> str:
+        """
+        Format the prompt template with the agent's information and context.
+        
+        Args:
+            context: Dictionary containing the context for analysis
+            
+        Returns:
+            Formatted prompt string
+        """
+        responsibilities_str = "\n".join(f"- {r}" for r in self.responsibilities) if self.responsibilities else ""
+        context_str = json.dumps(context, indent=2) if isinstance(context, dict) else str(context)
+        
+        return self.prompt_template.format(
+            agent_name=self.name or "OpenAI Architect",
+            agent_role=self.role or "analyzing the project",
+            agent_responsibilities=responsibilities_str,
+            context=context_str
+        )
     
     # ====================================================
     # Helper Methods
@@ -123,8 +161,7 @@ class OpenAIArchitect(BaseArchitect):
             "messages": [{
                 "role": "user",
                 "content": content
-            }],
-            "max_completion_tokens": 25000
+            }]
         }
         
         # Add reasoning parameters based on model and mode
@@ -151,7 +188,7 @@ class OpenAIArchitect(BaseArchitect):
     # This method implements the abstract analyze method from BaseArchitect.
     # ====================================================
     
-    async def analyze(self, context: Dict[str, any]) -> Dict:
+    async def analyze(self, context: Dict) -> Dict:
         """
         Run analysis using the OpenAI model.
         
@@ -166,29 +203,33 @@ class OpenAIArchitect(BaseArchitect):
             if "formatted_prompt" in context:
                 content = context["formatted_prompt"]
             else:
-                # Default formatting
-                content = f"Analyze the following context:\n\n{json.dumps(context, indent=2)}"
+                # Format the prompt using the template
+                content = self.format_prompt(context)
             
             # Get model parameters
             params = self._get_model_parameters(content)
             
+            # Try to get the model config name
+            from core.utils.tools.model_config_helper import get_model_config_name
+            model_config_name = get_model_config_name(self)
+            
+            agent_name = self.name or "OpenAI Architect"
+            logger.info(f"[bold blue]{agent_name}:[/bold blue] Sending request to {self.model_name} (Config: {model_config_name})")
+            
             # Call the OpenAI API
             response = openai_client.chat.completions.create(**params)
             
-            # Process response
-            reasoning_tokens = 0
-            if hasattr(response.usage, 'completion_tokens_details'):
-                reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
+            logger.info(f"[bold green]{agent_name}:[/bold green] Received response from {self.model_name}")
             
             return {
-                "agent": self.name or "OpenAI Architect",
-                "findings": response.choices[0].message.content,
-                "reasoning_tokens": reasoning_tokens
+                "agent": agent_name,
+                "findings": response.choices[0].message.content
             }
         except Exception as e:
-            logger.error(f"Error in {self.name or 'OpenAI Architect'} analysis: {str(e)}")
+            agent_name = self.name or "OpenAI Architect"
+            logger.error(f"[bold red]Error in {agent_name}:[/bold red] {str(e)}")
             return {
-                "agent": self.name or "OpenAI Architect",
+                "agent": agent_name,
                 "error": str(e)
             }
     
@@ -204,7 +245,7 @@ class OpenAIArchitect(BaseArchitect):
             prompt: Optional custom prompt to use instead of the default
             
         Returns:
-            Dictionary containing the analysis plan and token usage
+            Dictionary containing the analysis plan
         """
         try:
             # Use the provided prompt or the default one
@@ -216,14 +257,8 @@ class OpenAIArchitect(BaseArchitect):
             # Call the OpenAI API
             response = openai_client.chat.completions.create(**params)
 
-            # Process response
-            reasoning_tokens = 0
-            if hasattr(response.usage, 'completion_tokens_details'):
-                reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
-
             return {
-                "plan": response.choices[0].message.content,
-                "reasoning_tokens": reasoning_tokens
+                "plan": response.choices[0].message.content
             }
         except Exception as e:
             logger.error(f"Error in analysis plan creation: {str(e)}")
@@ -243,7 +278,7 @@ class OpenAIArchitect(BaseArchitect):
             prompt: Optional custom prompt to use instead of the default
             
         Returns:
-            Dictionary containing the synthesis and token usage
+            Dictionary containing the synthesis
         """
         try:
             # Use the provided prompt or the default one
@@ -255,14 +290,8 @@ class OpenAIArchitect(BaseArchitect):
             # Call the OpenAI API
             response = openai_client.chat.completions.create(**params)
 
-            # Process response
-            reasoning_tokens = 0
-            if hasattr(response.usage, 'completion_tokens_details'):
-                reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
-
             return {
-                "analysis": response.choices[0].message.content,
-                "reasoning_tokens": reasoning_tokens
+                "analysis": response.choices[0].message.content
             }
         except Exception as e:
             logger.error(f"Error in findings synthesis: {str(e)}")
@@ -282,7 +311,7 @@ class OpenAIArchitect(BaseArchitect):
             prompt: Optional custom prompt to use instead of the default
             
         Returns:
-            Dictionary containing the final analysis and token usage
+            Dictionary containing the final analysis
         """
         try:
             # Use the provided prompt or the default one
@@ -294,14 +323,8 @@ class OpenAIArchitect(BaseArchitect):
             # Call the OpenAI API
             response = openai_client.chat.completions.create(**params)
 
-            # Process response
-            reasoning_tokens = 0
-            if hasattr(response.usage, 'completion_tokens_details'):
-                reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
-
             return {
-                "analysis": response.choices[0].message.content,
-                "reasoning_tokens": reasoning_tokens
+                "analysis": response.choices[0].message.content
             }
         except Exception as e:
             logger.error(f"Error in final analysis: {str(e)}")
@@ -336,15 +359,9 @@ class OpenAIArchitect(BaseArchitect):
             # Call the OpenAI API
             response = openai_client.chat.completions.create(**params)
             
-            # Process response
-            reasoning_tokens = 0
-            if hasattr(response.usage, 'completion_tokens_details'):
-                reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
-            
             return {
                 "phase": "Consolidation",
-                "report": response.choices[0].message.content,
-                "reasoning_tokens": reasoning_tokens
+                "report": response.choices[0].message.content
             }
         except Exception as e:
             logger.error(f"Error in consolidation: {str(e)}")

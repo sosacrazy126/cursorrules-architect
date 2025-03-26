@@ -75,10 +75,10 @@ class DeepSeekArchitect(BaseArchitect):
 
     def _get_default_prompt_template(self) -> str:
         """Get the default prompt template for DeepSeek Reasoner."""
-        return """You are {name}, a code architecture analyst with expertise in {role}.
+        return """You are {agent_name}, a code architecture analyst with expertise in {agent_role}.
 
 Your responsibilities:
-{responsibilities}
+{agent_responsibilities}
 
 Please analyze the following context and provide a detailed analysis:
 
@@ -93,9 +93,9 @@ Provide your analysis in a structured format with clear sections and actionable 
         responsibilities_text = "\n".join([f"- {r}" for r in self.responsibilities]) if self.responsibilities else "Analyzing code architecture and patterns"
         
         return self.prompt_template.format(
-            name=self.name or "DeepSeek Reasoner",
-            role=self.role or "code architecture analysis",
-            responsibilities=responsibilities_text,
+            agent_name=self.name or "DeepSeek Reasoner",
+            agent_role=self.role or "code architecture analysis",
+            agent_responsibilities=responsibilities_text,
             context=json.dumps(context, indent=2)
         )
     
@@ -134,23 +134,32 @@ Provide your analysis in a structured format with clear sections and actionable 
             # Get API parameters
             params = self._get_api_parameters(messages)
             
+            # Get the model configuration name
+            from core.utils.tools.model_config_helper import get_model_config_name
+            model_config_name = get_model_config_name(self)
+            
+            agent_name = self.name or "DeepSeek Reasoner"
+            logger.info(f"[bold teal]{agent_name}:[/bold teal] Sending request to {self.model_name} (Config: {model_config_name})")
+            
             # Call the DeepSeek API via OpenAI SDK
-            logger.info(f"Calling DeepSeek Reasoner with {len(content)} characters")
             response = self.client.chat.completions.create(**params)
+            
+            logger.info(f"[bold green]{agent_name}:[/bold green] Received response from {self.model_name}")
             
             # Extract reasoning content from deepseek-reasoner
             reasoning_content = response.choices[0].message.reasoning_content
             content = response.choices[0].message.content
             
             return {
-                "agent": self.name or "DeepSeek Reasoner",
+                "agent": agent_name,
                 "findings": content,
                 "reasoning": reasoning_content
             }
         except Exception as e:
-            logger.error(f"Error in {self.name or 'DeepSeek Reasoner'} analysis: {str(e)}")
+            agent_name = self.name or "DeepSeek Reasoner"
+            logger.error(f"[bold red]Error in {agent_name}:[/bold red] {str(e)}")
             return {
-                "agent": self.name or "DeepSeek Reasoner",
+                "agent": agent_name,
                 "error": str(e)
             }
     
@@ -197,7 +206,7 @@ Provide your analysis in a structured format with clear sections and actionable 
             
             return {
                 "agent": self.name or "DeepSeek Reasoner",
-                "synthesis": response.choices[0].message.content,
+                "analysis": response.choices[0].message.content,
                 "reasoning": response.choices[0].message.reasoning_content
             }
         except Exception as e:
@@ -232,13 +241,13 @@ Provide your analysis in a structured format with clear sections and actionable 
             response = self.client.chat.completions.create(**params)
             
             return {
-                "agent": self.name or "DeepSeek Reasoner",
-                "consolidated_report": response.choices[0].message.content,
+                "phase": "Consolidation",
+                "report": response.choices[0].message.content,
                 "reasoning": response.choices[0].message.reasoning_content
             }
         except Exception as e:
             logger.error(f"Error in consolidate_results: {str(e)}")
-            return {"agent": self.name or "DeepSeek Reasoner", "error": str(e)}
+            return {"phase": "Consolidation", "error": str(e)}
 
 # Simpler Agent class for basic usage
 class DeepSeekAgent:

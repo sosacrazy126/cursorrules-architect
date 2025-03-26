@@ -23,8 +23,8 @@ import asyncio  # For asynchronous programming (running multiple tasks concurren
 from config.exclusions import EXCLUDED_DIRS, EXCLUDED_FILES, EXCLUDED_EXTENSIONS  # Import exclusion lists from config
 from core.utils.file_creation.phases_output import save_phase_outputs  # Import the save_phase_outputs function
 from core.utils.file_creation.cursorignore import create_cursorignore  # Import the create_cursorignore function
+from core.utils.tools.clean_cursorrules import clean_cursorrules  # Import the clean_cursorrules function
 from core.utils.tools.tree_generator import get_project_tree  # Import the tree generator function
-from core.agents.anthropic import ClaudeAgent  # Import the ClaudeAgent class
 from core.agents.openai import OpenAIAgent  # Import the OpenAIAgent class
 # Import all phase analysis classes from the core.analysis package
 from core.analysis import (
@@ -35,6 +35,8 @@ from core.analysis import (
     Phase5Analysis,
     FinalAnalysis
 )
+# Import the helper to get model configuration names
+from core.utils.tools.model_config_helper import get_model_config_name
 
 # Initialize clients for OpenAI and Anthropic APIs.  These are used to access
 # external AI models.
@@ -43,13 +45,45 @@ anthropic_client = Anthropic()
 
 # Setup logging.  This configures how log messages are displayed.
 console = Console()
-logging.basicConfig(
-    level=logging.INFO,  # Set the minimum log level to INFO (show informational messages and above)
-    format="%(message)s",  # Set the format of log messages to just show the message itself
-    handlers=[RichHandler(rich_tracebacks=True, show_time=False)]  # Use RichHandler for colorful and informative logs
-)
-logger = logging.getLogger("project_extractor")  # Create a logger instance named "project_extractor"
 
+# Filter HTTP request logs
+class HTTPRequestFilter(logging.Filter):
+    def filter(self, record):
+        # Filter out detailed HTTP request logs from OpenAI, Anthropic, etc.
+        if "HTTP Request:" in record.getMessage():
+            # Extract and modify the message to show only important parts
+            msg = record.getMessage()
+            if "api.openai.com" in msg:
+                record.msg = "Using OpenAI model"
+                return True
+            elif "api.anthropic.com" in msg:
+                record.msg = "Using Anthropic model"
+                return True
+            elif "generativelanguage.googleapis.com" in msg:
+                record.msg = "Using Google Gemini model"
+                return True
+            elif "api.deepseek.com" in msg:
+                record.msg = "Using DeepSeek model"
+                return True
+            return False
+        return True
+
+# Setup root logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[RichHandler(rich_tracebacks=True, show_time=False, markup=True)]
+)
+
+# Get the logger and add our filter
+logger = logging.getLogger("project_extractor")
+http_filter = HTTPRequestFilter()
+logger.addFilter(http_filter)
+
+# Also filter the OpenAI and httpx loggers
+for logger_name in ["openai", "httpx", "httpcore", "anthropic", "google", "genai"]:
+    mod_logger = logging.getLogger(logger_name)
+    mod_logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
 # ====================================================
 # Section 2: Project Analyzer Class
@@ -59,16 +93,14 @@ logger = logging.getLogger("project_extractor")  # Create a logger instance name
 # ====================================================
 
 class ProjectAnalyzer:
-    def __init__(self, directory: Path, use_new_architecture: bool = False):
+    def __init__(self, directory: Path):
         """
         Initialize the ProjectAnalyzer with the specified directory.
         
         Args:
             directory: Path to the project directory to analyze
-            use_new_architecture: Whether to use the new Architect architecture (default: False)
         """
         self.directory = directory
-        self.use_new_architecture = use_new_architecture
         
         # Initialize result storage
         self.phase1_results = {}
@@ -78,41 +110,41 @@ class ProjectAnalyzer:
         self.consolidated_report = {}
         self.final_analysis = {}
         
-        # Initialize all phase analyzers
-        self.phase1_analyzer = Phase1Analysis(use_new_architecture=use_new_architecture)
-        self.phase2_analyzer = Phase2Analysis(model="o1")
+        # Initialize all phase analyzers with dynamic model configurations
+        self.phase1_analyzer = Phase1Analysis()
+        self.phase2_analyzer = Phase2Analysis()
         self.phase3_analyzer = Phase3Analysis()
-        self.phase4_analyzer = Phase4Analysis(model="o1")
-        self.phase5_analyzer = Phase5Analysis(model="claude-3-7-sonnet-20250219")
-        self.final_analyzer = FinalAnalysis(model="o1")
+        self.phase4_analyzer = Phase4Analysis()
+        self.phase5_analyzer = Phase5Analysis()
+        self.final_analyzer = FinalAnalysis()
 
     async def run_phase1(self, tree: List[str], package_info: Dict) -> Dict:
-        """Initial Discovery Phase using Claude-3.7-Sonnet agents"""
+        """Initial Discovery Phase using configured model"""
         # Use the Phase1Analysis class to run the analysis
         return await self.phase1_analyzer.run(tree, package_info)
 
     async def run_phase2(self, phase1_results: Dict, tree: List[str]) -> Dict:
-        """Methodical Planning Phase using o1"""
+        """Methodical Planning Phase using configured model"""
         # Use the Phase2Analysis class to run the analysis
         return await self.phase2_analyzer.run(phase1_results, tree)
 
     async def run_phase3(self, analysis_plan: Dict, tree: List[str]) -> Dict:
-        """Deep Analysis Phase using Claude-3.7-Sonnet agents"""
+        """Deep Analysis Phase using configured model"""
         # Use the Phase3Analysis class to run the analysis
         return await self.phase3_analyzer.run(analysis_plan, tree, self.directory)
 
     async def run_phase4(self, phase3_results: Dict) -> Dict:
-        """Synthesis Phase using o1"""
+        """Synthesis Phase using configured model"""
         # Use the Phase4Analysis class to run the analysis
         return await self.phase4_analyzer.run(phase3_results)
 
     async def run_phase5(self, all_results: Dict) -> Dict:
-        """Consolidation Phase using Claude-3-7-sonnet"""
+        """Consolidation Phase using configured model"""
         # Use the Phase5Analysis class to run the analysis
         return await self.phase5_analyzer.run(all_results)
 
     async def run_final_analysis(self, consolidated_report: Dict, tree: List[str] = None) -> Dict:
-        """Final Analysis Phase using o1"""
+        """Final Analysis Phase using configured model"""
         # Use the FinalAnalysis class to run the analysis
         return await self.final_analyzer.run(consolidated_report, tree)
 
@@ -127,7 +159,10 @@ class ProjectAnalyzer:
         ) as progress:
 
             # --- Phase 1: Initial Discovery ---
-            task1 = progress.add_task("[green]Phase 1: Initial Discovery...", total=None)  # Add a task for Phase 1
+            console.print("\n[bold green]Phase 1: Initial Discovery[/bold green]")
+            console.print("[dim]Running three concurrent agents: Structure Agent, Dependency Agent, and Tech Stack Agent...[/dim]")
+            
+            task1 = progress.add_task("[green]Running analysis agents...", total=1)  # Add a task for Phase 1 with a total
             tree_with_delimiters = get_project_tree(self.directory)  # Generate the directory tree using the enhanced tree generator
             
             # Remove delimiters for analysis
@@ -137,25 +172,63 @@ class ProjectAnalyzer:
             
             package_info = {}  # Placeholder for package information (you would parse package.json here)
             self.phase1_results = await self.run_phase1(tree_for_analysis, package_info)  # Run Phase 1
-            progress.update(task1, completed=True)  # Mark Phase 1 as complete
+            
+            # Complete and remove the task
+            progress.update(task1, completed=1)
+            progress.stop_task(task1)
+            progress.remove_task(task1)
+            console.print("[green]✓[/green] Phase 1 complete: All three agents have finished their analysis")
 
             # --- Phase 2: Methodical Planning ---
-            task2 = progress.add_task("[blue]Phase 2: Methodical Planning...", total=None)
+            console.print("\n[bold blue]Phase 2: Methodical Planning[/bold blue]")
+            console.print("[dim]Creating a detailed plan for deeper analysis...[/dim]")
+            
+            task2 = progress.add_task("[blue]Creating analysis plan...", total=1)
             self.phase2_results = await self.run_phase2(self.phase1_results, tree_for_analysis)
-            progress.update(task2, completed=True)
+            
+            # Complete and remove the task
+            progress.update(task2, completed=1)
+            progress.stop_task(task2)
+            progress.remove_task(task2)
+            console.print("[blue]✓[/blue] Phase 2 complete: Analysis plan created")
 
             # --- Phase 3: Deep Analysis ---
-            task3 = progress.add_task("[yellow]Phase 3: Deep Analysis...", total=None)
+            console.print("\n[bold yellow]Phase 3: Deep Analysis[/bold yellow]")
+            
+            # Check if we have defined agents
+            agent_count = len(self.phase2_results.get("agents", []))
+            if agent_count > 0:
+                console.print(f"[dim]Running {agent_count} specialized analysis agents on their assigned files...[/dim]")
+            else:
+                console.print("[dim]Running specialized analysis on project files...[/dim]")
+                
+            task3 = progress.add_task("[yellow]Analyzing files in depth...", total=1)
             self.phase3_results = await self.run_phase3(self.phase2_results, tree_for_analysis)
-            progress.update(task3, completed=True)
+            
+            # Complete and remove the task
+            progress.update(task3, completed=1)
+            progress.stop_task(task3)
+            progress.remove_task(task3)
+            console.print("[yellow]✓[/yellow] Phase 3 complete: In-depth analysis finished")
 
             # --- Phase 4: Synthesis ---
-            task4 = progress.add_task("[magenta]Phase 4: Synthesis...", total=None)
+            console.print("\n[bold magenta]Phase 4: Synthesis[/bold magenta]")
+            console.print("[dim]Synthesizing findings from all previous analyses...[/dim]")
+            
+            task4 = progress.add_task("[magenta]Synthesizing findings...", total=1)
             self.phase4_results = await self.run_phase4(self.phase3_results)
-            progress.update(task4, completed=True)
+            
+            # Complete and remove the task
+            progress.update(task4, completed=1)
+            progress.stop_task(task4)
+            progress.remove_task(task4)
+            console.print("[magenta]✓[/magenta] Phase 4 complete: Findings synthesized")
 
             # --- Phase 5: Consolidation ---
-            task5 = progress.add_task("[cyan]Phase 5: Consolidation...", total=None)
+            console.print("\n[bold cyan]Phase 5: Consolidation[/bold cyan]")
+            console.print("[dim]Consolidating all results into a comprehensive report...[/dim]")
+            
+            task5 = progress.add_task("[cyan]Consolidating results...", total=1)
             all_results = {  # Combine the results from all previous phases
                 "phase1": self.phase1_results,
                 "phase2": self.phase2_results,
@@ -163,13 +236,29 @@ class ProjectAnalyzer:
                 "phase4": self.phase4_results
             }
             self.consolidated_report = await self.run_phase5(all_results)  # Run Phase 5
-            progress.update(task5, completed=True)
+            
+            # Complete and remove the task
+            progress.update(task5, completed=1)
+            progress.stop_task(task5)
+            progress.remove_task(task5)
+            console.print("[cyan]✓[/cyan] Phase 5 complete: Results consolidated")
 
             # --- Final Analysis ---
-            task6 = progress.add_task("[white]Final Analysis...", total=None)
+            console.print("\n[bold white]Final Analysis[/bold white]")
+            console.print("[dim]Creating final analysis for Cursor IDE...[/dim]")
+            
+            task6 = progress.add_task("[white]Creating rules...", total=1)
             self.final_analysis = await self.run_final_analysis(self.consolidated_report, tree_for_analysis)  # Run the final analysis with project structure
-            progress.update(task6, completed=True)
+            
+            # Complete and remove the task
+            progress.update(task6, completed=1)
+            progress.stop_task(task6)
+            progress.remove_task(task6)
+            console.print("[white]✓[/white] Final Analysis complete: Cursor rules created")
 
+        # Get model information from the configuration
+        from config.agents import MODEL_CONFIG
+        
         # Format the final output
         analysis = [
             f"Project Analysis Report for: {self.directory}",
@@ -181,37 +270,42 @@ class ProjectAnalyzer:
         analysis.extend(tree_with_delimiters)
         analysis.append("\n")
 
+        # Get model configuration names
+        phase1_model = get_model_config_name(MODEL_CONFIG['phase1'])
+        phase2_model = get_model_config_name(MODEL_CONFIG['phase2'])
+        phase3_model = get_model_config_name(MODEL_CONFIG['phase3'])
+        phase4_model = get_model_config_name(MODEL_CONFIG['phase4'])
+        phase5_model = get_model_config_name(MODEL_CONFIG['phase5'])
+        final_model = get_model_config_name(MODEL_CONFIG['final'])
+
         analysis.extend([
-            "Phase 1: Initial Discovery (Claude-3.7-Sonnet)",
+            f"Phase 1: Initial Discovery (Config: {phase1_model})",
             "-" * 30,
             json.dumps(self.phase1_results, indent=2),  # Include Phase 1 results (formatted as JSON)
             "\n",
-            "Phase 2: Methodical Planning (o1)",
+            f"Phase 2: Methodical Planning (Config: {phase2_model})",
             "-" * 30,
             self.phase2_results.get("plan", "Error in planning phase"),  # Include Phase 2 plan (or an error message)
             "\n",
-            "Phase 3: Deep Analysis (Claude-3.7-Sonnet)",
+            f"Phase 3: Deep Analysis (Config: {phase3_model})",
             "-" * 30,
             json.dumps(self.phase3_results, indent=2),  # Include Phase 3 results
             "\n",
-            "Phase 4: Synthesis (o1)",
+            f"Phase 4: Synthesis (Config: {phase4_model})",
             "-" * 30,
             self.phase4_results.get("analysis", "Error in synthesis phase"),  # Include Phase 4 analysis
             "\n",
-            "Phase 5: Consolidation (Claude-3.7-Sonnet)",
+            f"Phase 5: Consolidation (Config: {phase5_model})",
             "-" * 30,
             self.consolidated_report.get("report", "Error in consolidation phase"),  # Include Phase 5 report
             "\n",
-            "Final Analysis",
+            f"Final Analysis (Config: {final_model})",
             "-" * 30,
             self.final_analysis.get("analysis", "Error in final analysis phase"),  # Include the final analysis
             "\n",
             "Analysis Metrics",
             "-" * 30,
-            f"Time taken: {time.time() - start_time:.2f} seconds",  # Include the total time taken
-            f"Phase 2 reasoning tokens: {self.phase2_results.get('reasoning_tokens', 0)}",  # Include token usage
-            f"Phase 4 reasoning tokens: {self.phase4_results.get('reasoning_tokens', 0)}",
-            f"Final Analysis reasoning tokens: {self.final_analysis.get('reasoning_tokens', 0)}"
+            f"Time taken: {time.time() - start_time:.2f} seconds"  # Include the total time taken
         ])
 
         return "\n".join(analysis)  # Join the lines with newline characters
@@ -226,15 +320,13 @@ class ProjectAnalyzer:
 @click.command()  # Decorate the `main` function as a click command
 @click.option('--path', '-p', type=str, help='Path to the project directory')  # Define a command-line option for the project path
 @click.option('--output', '-o', type=str, help='Output file path (deprecated, no longer used)')  # Mark as deprecated
-@click.option('--use-new-architecture', '-n', is_flag=True, help='Use the new Architect architecture')  # Define a flag for using the new architecture
-def main(path: str, output: str, use_new_architecture: bool):
+def main(path: str, output: str):
     """
     Run the complete project analysis workflow.
     
     Args:
         path: Path to the project directory to analyze
         output: Path to the output file (deprecated, no longer used)
-        use_new_architecture: Whether to use the new Architect architecture
     """
     try:
         # If the user doesn't provide a project path, prompt them to enter it.
@@ -252,7 +344,7 @@ def main(path: str, output: str, use_new_architecture: bool):
             logger.warning("The --output option is deprecated and no longer used.")
 
         console.print(f"\n[bold]Analyzing project:[/] {directory}")  # Print a message indicating which project is being analyzed
-        analyzer = ProjectAnalyzer(directory, use_new_architecture)  # Create a `ProjectAnalyzer` instance
+        analyzer = ProjectAnalyzer(directory)  # Create a `ProjectAnalyzer` instance
         start_time = time.time()  # Start timing here
         analysis_result = asyncio.run(analyzer.analyze())  # Run the analysis (this is an asynchronous operation)
 
@@ -277,10 +369,7 @@ def main(path: str, output: str, use_new_architecture: bool):
             "consolidated_report": consolidated_report,
             "final_analysis": final_analysis,
             "metrics": {  # Include analysis metrics
-                "time": time.time() - start_time,  # Calculate the total time taken
-                "phase2_tokens": phase2_results.get("reasoning_tokens", 0),  # Get token usage for each phase
-                "phase4_tokens": phase4_results.get("reasoning_tokens", 0),
-                "final_tokens": final_analysis.get("reasoning_tokens", 0)
+                "time": time.time() - start_time  # Calculate the total time taken
             }
         }
 
@@ -288,14 +377,27 @@ def main(path: str, output: str, use_new_architecture: bool):
         save_phase_outputs(directory, analysis_data)
         
         # Create .cursorignore file with default patterns
-        success, message = create_cursorignore()
+        success, message = create_cursorignore(str(directory))
         if success:
             console.print(f"[green]{message}[/]")
         else:
             console.print(f"[yellow]{message}[/]")
 
+        # Clean cursor rules file by removing text before "You are..." if needed
+        success, message = clean_cursorrules(str(directory))
+        if success:
+            console.print(f"[green]Cleaned cursor rules file: removed text before 'You are...'[/]")
+        else:
+            if "not found" in message:
+                console.print(f"[yellow]No cursor rules file found to clean[/]")
+            elif "Pattern 'You are' not found" in message:
+                console.print(f"[yellow]Pattern 'You are' not found in cursor rules file[/]")
+            else:
+                console.print(f"[yellow]{message}[/]")
+
         console.print(f"[green]Individual phase outputs saved to:[/] {directory}/phases_output/")
         console.print(f"[green]Cursor rules created at:[/] {directory}/.cursorrules")  # Inform about .cursorrules file
+        console.print(f"[green]Cursor ignore created at:[/] {directory}/.cursorignore")  # Inform about .cursorignore file
         console.print(f"[green]Execution metrics saved to:[/] {directory}/phases_output/metrics.md")  # Inform about metrics file
 
     except Exception as e:

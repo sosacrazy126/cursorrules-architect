@@ -6,6 +6,7 @@
 [![OpenAI](https://img.shields.io/badge/OpenAI-o1%20%7C%20o3--mini%20%7C%20gpt--4o-blue.svg)](https://openai.com/)
 [![Anthropic](https://img.shields.io/badge/Anthropic-claude--3.7--sonnet-purple.svg)](https://www.anthropic.com/)
 [![DeepSeek](https://img.shields.io/badge/DeepSeek-deepseek--reasoner-red.svg)](https://deepseek.com/)
+[![Google](https://img.shields.io/badge/Google-gemini--2.0--flash%20%7C%20gemini--2.5--pro-green.svg)](https://ai.google.dev/)
 [![Built By](https://img.shields.io/badge/Built%20By-SlyyCooper-orange.svg)](https://github.com/SlyyCooper)
 
 **Your Multi-Provider AI Code Analysis and .cursorrules Generator 🚀**
@@ -16,11 +17,11 @@
 
 ## 🌟 What's This All About?
 
-CursorRules Architect V2 is an advanced multi-agent system that analyzes your codebase using a powerful combination of AI models from Anthropic, OpenAI, and DeepSeek. It performs a comprehensive six-phase analysis to understand your project's structure, dependencies, patterns, and architectural decisions. The result is a detailed report and automatically generated `.cursorrules` and `.cursorignore` files customized for your project.
+CursorRules Architect V2 is an advanced multi-agent system that analyzes your codebase using a powerful combination of AI models from Anthropic, OpenAI, DeepSeek, and Google. It performs a comprehensive six-phase analysis to understand your project's structure, dependencies, patterns, and architectural decisions. The result is a detailed report and automatically generated `.cursorrules` and `.cursorignore` files customized for your project.
 
 ## ✨ Features
 
-- 🌐 **Multi-Provider Support** - Leverage AI models from Anthropic, OpenAI, and DeepSeek
+- 🌐 **Multi-Provider Support** - Leverage AI models from Anthropic, OpenAI, DeepSeek, and Google Gemini
 - 🧠 **Enhanced Reasoning** - Different reasoning modes (enabled/disabled, low/medium/high, temperature)
 - 🤖 **Dynamic Agents** - Creates specialized analysis agents based on your specific codebase
 - 🔍 **Six-Phase Analysis** - Structured pipeline that builds comprehensive understanding
@@ -39,9 +40,11 @@ CursorRules Architect V2 is an advanced multi-agent system that analyzes your co
   - Anthropic API key with access to `claude-3-7-sonnet-20250219`
   - OpenAI API key with access to `o1`, `o3-mini`, or `gpt-4o`
   - DeepSeek API key with access to DeepSeek Reasoner
+  - Google API key with access to `gemini-2.0-flash` or `gemini-2.5-pro-exp-03-25`
 - Dependencies:
   - `anthropic` for Anthropic API access
   - `openai` for OpenAI API access
+  - `google-generativeai` for Google Gemini API access
   - `rich` for beautiful terminal output
   - `click` for CLI interface
   - `pathlib` for path manipulation
@@ -66,11 +69,13 @@ CursorRules Architect V2 is an advanced multi-agent system that analyzes your co
    export ANTHROPIC_API_KEY='your-anthropic-api-key'
    export OPENAI_API_KEY='your-openai-api-key'
    export DEEPSEEK_API_KEY='your-deepseek-api-key'
+   export GEMINI_API_KEY='your-gemini-api-key'
 
    # Windows
    set ANTHROPIC_API_KEY=your-anthropic-api-key
    set OPENAI_API_KEY=your-openai-api-key
    set DEEPSEEK_API_KEY=your-deepseek-api-key
+   set GEMINI_API_KEY=your-gemini-api-key
    ```
 
    Alternatively, create a `.env` file in the project root:
@@ -78,6 +83,7 @@ CursorRules Architect V2 is an advanced multi-agent system that analyzes your co
    ANTHROPIC_API_KEY=your-anthropic-api-key
    OPENAI_API_KEY=your-openai-api-key
    DEEPSEEK_API_KEY=your-deepseek-api-key
+   GEMINI_API_KEY=your-gemini-api-key
    ```
 
 ## 🚀 Usage
@@ -146,6 +152,19 @@ DEEPSEEK_REASONER = ModelConfig(
     model_name="deepseek-reasoner",
     reasoning=ReasoningMode.ENABLED
 )
+
+# Gemini Configurations
+GEMINI_BASIC = ModelConfig(
+    provider=ModelProvider.GEMINI,
+    model_name="gemini-2.0-flash",
+    reasoning=ReasoningMode.DISABLED
+)
+
+GEMINI_WITH_REASONING = ModelConfig(
+    provider=ModelProvider.GEMINI,
+    model_name="gemini-2.5-pro-exp-03-25",
+    reasoning=ReasoningMode.ENABLED
+)
 ```
 
 ### Customizing Phase Models
@@ -154,12 +173,12 @@ To change which model is used for each phase, simply update the `MODEL_CONFIG` d
 
 ```python
 MODEL_CONFIG = {
-    "phase1": CLAUDE_WITH_REASONING,  # Use Claude with reasoning for Phase 1
-    "phase2": O1_HIGH,                # Use OpenAI's o1 with high reasoning for Phase 2
-    "phase3": CLAUDE_WITH_REASONING,  # Use Claude with reasoning for Phase 3
-    "phase4": O1_HIGH,                # Use OpenAI's o1 with high reasoning for Phase 4
-    "phase5": CLAUDE_WITH_REASONING,  # Use Claude with reasoning for Phase 5
-    "final": O1_HIGH,                 # Use OpenAI's o1 with high reasoning for final analysis
+    "phase1": GEMINI_BASIC,                # Use Gemini-2.0-flash for Phase 1
+    "phase2": GEMINI_WITH_REASONING,       # Use Gemini-2.5-pro with reasoning for Phase 2
+    "phase3": CLAUDE_WITH_REASONING,       # Use Claude with reasoning for Phase 3
+    "phase4": O1_HIGH,                     # Use OpenAI's o1 with high reasoning for Phase 4
+    "phase5": DEEPSEEK_REASONER,           # Use DeepSeek Reasoner for Phase 5
+    "final": CLAUDE_WITH_REASONING,        # Use Claude with reasoning for final analysis
 }
 ```
 
@@ -197,6 +216,7 @@ The system is built on a `BaseArchitect` abstract class that standardizes how di
 - `AnthropicArchitect` - Interface to Anthropic's Claude models
 - `OpenAIArchitect` - Interface to OpenAI's models (o1, o3-mini, gpt-4o)
 - `DeepSeekArchitect` - Interface to DeepSeek's reasoning models
+- `GeminiArchitect` - Interface to Google's Gemini models
 
 Each architect implements standardized methods:
 - `analyze()` - Runs general analysis
@@ -263,6 +283,10 @@ The system supports different reasoning modes depending on the model:
 
 - For DeepSeek models:
   - Always uses `ENABLED` reasoning mode
+  
+- For Gemini models:
+  - `ENABLED` - Uses the thinking-enabled experimental model variant
+  - `DISABLED` - Standard inference
 
 ## 📂 Project Structure
 
@@ -282,6 +306,7 @@ cursorrules-architect/
 │   │   ├── anthropic.py         # Anthropic agent implementation
 │   │   ├── base.py              # Base architect abstract class
 │   │   ├── deepseek.py          # DeepSeek agent implementation
+│   │   ├── gemini.py            # Google Gemini agent implementation
 │   │   └── openai.py            # OpenAI agent implementation
 │   ├── analysis/                # Analysis phase implementations
 │   │   ├── final_analysis.py    # Final Analysis phase
@@ -331,6 +356,10 @@ The system tracks performance metrics for the analysis:
 - Token usage for phases using reasoning models
 - Per-agent execution times
 
+## 🛠️ Related Tools
+
+Check out [cursorrules-tools](https://github.com/SlyyCooper/cursorrules-tools) for additional utilities that can help with Cursor IDE development. This collection includes tools for managing `.cursorrules` and `.cursorignore` files, generating codebase snapshots, analyzing dependencies, and more.
+
 ## 💡 Advanced Features
 
 ### Dynamic Agent Creation
@@ -358,6 +387,7 @@ You can run the system with one or more AI providers:
 - **Anthropic-only**: Set all phases to use Claude models
 - **OpenAI-only**: Set all phases to use o1, o3-mini, or gpt-4o
 - **DeepSeek-only**: Set all phases to use DeepSeek Reasoner
+- **Gemini-only**: Set all phases to use Google Gemini models
 - **Mix and match**: Use different providers for different phases
 
 ### Customizing Prompts
@@ -383,6 +413,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-Built with 💙 using [Claude-3.7-Sonnet](https://www.anthropic.com/claude), [o1](https://openai.com/), and [DeepSeek Reasoner](https://deepseek.com/)
+Built with 💙 using [Claude-3.7-Sonnet](https://www.anthropic.com/claude), [o1](https://openai.com/), [DeepSeek Reasoner](https://deepseek.com/), and [Google Gemini](https://ai.google.dev/)
 
 </div>

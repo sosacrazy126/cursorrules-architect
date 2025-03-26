@@ -94,26 +94,35 @@ def list_patterns() -> Tuple[bool, str]:
 
 # ====================================================
 # Function: create_cursorignore
-# This function creates a .cursorignore file in the current directory,
+# This function creates a .cursorignore file in the specified directory,
 # populating it with saved patterns if any exist.
 # ====================================================
-def create_cursorignore() -> Tuple[bool, str]:
+def create_cursorignore(directory: Optional[str] = None) -> Tuple[bool, str]:
     """Create a .cursorignore file with saved patterns if it doesn't exist.
+    
+    Args:
+        directory: Optional directory path where to create the file. If None, uses current directory.
     
     Returns:
         Tuple[bool, str]: Success status and message
     """
-    if os.path.isfile(CURSORIGNORE_FILE):
-        return True, ".cursorignore file already exists"
+    # Determine the full path for the .cursorignore file
+    if directory:
+        cursorignore_path = os.path.join(directory, CURSORIGNORE_FILE)
+    else:
+        cursorignore_path = CURSORIGNORE_FILE
+    
+    if os.path.isfile(cursorignore_path):
+        return True, f".cursorignore file already exists at {cursorignore_path}"
     
     patterns = get_saved_patterns()
     
-    with open(CURSORIGNORE_FILE, 'w') as f:
+    with open(cursorignore_path, 'w') as f:
         if patterns:
             f.write("\n".join(patterns) + "\n")
-            return True, "Created .cursorignore file with saved patterns"
+            return True, f"Created .cursorignore file with saved patterns at {cursorignore_path}"
         else:
-            return True, "Created empty .cursorignore file (no saved patterns)"
+            return True, f"Created empty .cursorignore file at {cursorignore_path} (no saved patterns)"
 
 
 # ====================================================

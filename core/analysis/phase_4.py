@@ -13,6 +13,7 @@ import logging  # Used for logging messages
 from typing import Dict  # Used for type hinting, making code more readable
 from core.agents.openai import OpenAIAgent  # The OpenAI agent class
 from config.prompts.phase_4_prompts import PHASE_4_PROMPT, format_phase4_prompt  # Prompts for Phase 4
+from config.agents import get_architect_for_phase  # Added import for dynamic model configuration
 
 # ====================================================
 # Logger Initialization
@@ -31,7 +32,7 @@ class Phase4Analysis:
     """
     Class responsible for Phase 4 (Synthesis) of the project analysis.
     
-    This phase uses OpenAI's o1 model to synthesize the findings from Phase 3,
+    This phase uses a model configured in config/agents.py to synthesize the findings from Phase 3,
     providing a deeper analysis and updated directions.
     """
     
@@ -39,22 +40,20 @@ class Phase4Analysis:
     # Initialization Method
     # Sets up the Phase 4 analysis with the OpenAI agent.
     # ====================================================
-    def __init__(self, model: str = "o1"):
+    def __init__(self):
         """
-        Initialize the Phase 4 analysis with the required OpenAI agent.
-        
-        Args:
-            model: The OpenAI model to use (default: "o1")
+        Initialize the Phase 4 analysis with the architect from configuration.
         """
-        self.openai_agent = OpenAIAgent(model=model)
+        # Use the factory function to get the appropriate architect based on configuration
+        self.architect = get_architect_for_phase("phase4")
 
     # ====================================================
     # Run Method
-    # Executes the Synthesis Phase using the o1 model.
+    # Executes the Synthesis Phase using the configured model.
     # ====================================================
     async def run(self, phase3_results: Dict) -> Dict:
         """
-        Run the Synthesis Phase using o1.
+        Run the Synthesis Phase using the configured model.
         
         Args:
             phase3_results: Dictionary containing the results from Phase 3
@@ -66,8 +65,14 @@ class Phase4Analysis:
             # Format the prompt using the template from the prompts file
             prompt = format_phase4_prompt(phase3_results)
             
-            # Use the OpenAIAgent to synthesize findings from Phase 3
-            return await self.openai_agent.synthesize_findings(phase3_results, prompt)
+            logger.info("[bold]Phase 4:[/bold] Synthesizing findings from all analysis agents")
+            
+            # Use the architect to synthesize findings from Phase 3
+            result = await self.architect.synthesize_findings(phase3_results, prompt)
+            
+            logger.info("[bold green]Phase 4:[/bold green] Synthesis completed successfully")
+            
+            return result
         except Exception as e:
-            logger.error(f"Error in Phase 4: {str(e)}")
+            logger.error(f"[bold red]Error in Phase 4:[/bold red] {str(e)}")
             return {"error": str(e)}

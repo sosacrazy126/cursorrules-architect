@@ -1,6 +1,6 @@
 ---
-description: when coding with claude and anthropic
-globs: 
+description: 
+globs: core/agents/anthropic.py,core/agents/base.py
 alwaysApply: false
 ---
 # Claude 3.7 Sonnet Reaosning
@@ -385,45 +385,13 @@ task.
   * Be prepared for potentially longer response times due to the additional processing required for the reasoning process.
   * Streaming is required when `max_tokens` is greater than 21,333.
 
-**For thinking budgets above 32K:** We recommend using batch processing for
-workloads where the thinking budget is set above 32K to avoid networking
-issues. Requests pushing the model to think above 32K tokens causes long
-running requests that might run up against system timeouts and open connection
-limits.
-
 **Thinking compatibility with other features:**
 
   * Thinking isn’t compatible with `temperature`, `top_p`, or `top_k` modifications as well as forced tool use.
   * You cannot pre-fill responses when thinking is enabled.
   * Changes to the thinking budget invalidate cached prompt prefixes that include messages. However, cached system prompts and tool definitions will continue to work when thinking parameters change.
 
-### Pricing and token usage for extended thinking
-
-Extended thinking tokens count towards the context window and are billed as
-output tokens. Since thinking tokens are treated as normal output tokens, they
-also count towards your rate limits. Be sure to account for this increased
-token usage when planning your API usage.
-
-For Claude 3.7 Sonnet, the pricing is:
-
-Token use| Cost  
----|---  
-Input tokens| $3 / MTok  
-Output tokens (including thinking tokens)| $15 / MTok  
-Prompt caching write| $3.75 / MTok  
-Prompt caching read| $0.30 / MTok  
-  
-Batch processing for extended thinking is available at 50% off these prices
-and often completes in less than 1 hour.
-
-All extended thinking tokens (including redacted thinking tokens) are billed
-as output tokens and count toward your rate limits.
-
-In multi-turn conversations, thinking blocks associated with earlier assistant
-messages do not get billed as input tokens.
-
-When extended thinking is enabled, a specialized 28 or 29 token system prompt
-is automatically included to support this feature.
+#e.
 
 Example: Previous thinking tokens omitted as input tokens for future turns
 ```python

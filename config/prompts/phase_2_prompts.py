@@ -35,12 +35,12 @@ PHASE_2_PROMPT = """You are a project documentation planner tasked with processi
 ---
 
 # OUTPUT REQUIREMENTS
-# 1. Use valid XML format with proper closing tags
+# 1. Use valid XML format with proper closing tags **NOT IN A CODE BLOCK**
 # 2. DO NOT use special characters like &, <, > in agent names or descriptions
 # 3. Use only alphanumeric characters and spaces in names
 # 4. Keep agent IDs exactly as shown: agent_1, agent_2, agent_3)
 
---
+---
 
 ## OUTPUT FORMAT
 

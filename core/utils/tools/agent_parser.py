@@ -3,7 +3,7 @@
 utils/tools/agent_parser.py
 
 This module provides functionality for parsing agent assignments from Phase 2's
-XML-like output format. It extracts agent definitions, responsibilities, and file
+output format. It extracts agent definitions, responsibilities, and file
 assignments to enable dynamic agent creation in Phase 3.
 
 This module is used by Phase 3 to create agents based on Phase 2's allocation plan.
@@ -11,27 +11,23 @@ This module is used by Phase 3 to create agents based on Phase 2's allocation pl
 
 # ====================================================
 # Importing Necessary Libraries
-# This section imports all the external libraries needed for this script to work.
-# These libraries add extra functionalities like handling XML, regular expressions, and logging.
 # ====================================================
 
 import re
+import json
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union, Any
 import xml.etree.ElementTree as ET
 from io import StringIO
 
 # ====================================================
 # Initialize Logger
-# Set up a logger to record important events and errors during the script's execution.
 # ====================================================
 
 logger = logging.getLogger("project_extractor")
 
 # ====================================================
 # Define XML Tag Constants
-# These constants store the names of XML tags used in the Phase 2 output.
-# Using constants makes it easier to update tag names if they change in the future.
 # ====================================================
 
 DESCRIPTION_TAG = "description"
@@ -44,66 +40,163 @@ RESPONSIBILITY_TAG = "responsibility"
 REASONING_TAG = "reasoning"
 ANALYSIS_PLAN_TAG = "analysis_plan"
 
-
 # ====================================================
-# Function: create_xml_from_phase2_output
-# This function takes the raw output from Phase 2 and converts it into a well-formed XML string.
-# It handles cases where the output might be missing tags or have formatting issues.
+# Helper Functions
 # ====================================================
 
-def create_xml_from_phase2_output(phase2_output: str) -> str:
+def extract_from_json(data: Union[Dict, str]) -> str:
     """
-    Create proper XML from the Phase 2 output by wrapping it in a root element
-    and fixing any XML issues.
+    Extract the plan field from a JSON object or JSON string.
     
     Args:
-        phase2_output: Raw output from Phase 2
+        data: Either a dictionary or a JSON string
         
     Returns:
-        str: Properly formatted XML string
+        str: The extracted plan content or original data if not found
     """
-    # Extract the XML-like content from between <analysis_plan> tags
-    plan_match = re.search(r'<analysis_plan>(.*?)</analysis_plan>', 
-                          phase2_output, re.DOTALL)
-    
-    # If not found, check if there's a reasoning tag followed by an analysis_plan tag
-    if not plan_match:
-        reasoning_and_plan_match = re.search(r'<reasoning>(.*?)</reasoning>.*?<analysis_plan>(.*?)</analysis_plan>',
-                                        phase2_output, re.DOTALL)
-        if reasoning_and_plan_match:
-            # Just extract the analysis_plan part
-            xml_content = reasoning_and_plan_match.group(2).strip()
-            logger.info("Found analysis_plan after reasoning tag")
+    # Handle dictionary input
+    if isinstance(data, dict):
+        logger.debug("Extracting plan from dictionary")
+        if "plan" in data:
+            return data["plan"]
         else:
-            logger.error("Could not find <analysis_plan> tags in Phase 2 output")
-            # Try to extract without tags as a fallback
-            # Look for agent tag sequences
-            agent_matches = re.findall(r'<agent_\d+.*?>.*?</agent_\d+>', phase2_output, re.DOTALL)
+            logger.debug("No 'plan' field found in dictionary")
+            return ""
+    
+    # Handle potential JSON string
+    if isinstance(data, str) and data.strip().startswith('{'):
+        try:
+            json_data = json.loads(data)
+            if isinstance(json_data, dict) and "plan" in json_data:
+                logger.debug("Extracted plan from JSON string")
+                return json_data["plan"]
+        except json.JSONDecodeError:
+            logger.debug("Failed to parse as JSON, continuing with raw string")
+            pass
+    
+    # Return original data if no extraction possible
+    return data
+
+def extract_from_markdown_block(content: str) -> str:
+    """
+    Extract content from various markdown code block formats.
+    
+    Args:
+        content: String potentially containing markdown code blocks
+        
+    Returns:
+        str: Content with markdown formatting removed
+    """
+    # Case 1: Four backticks format (````xml)
+    four_backticks = re.search(r'````(?:xml|)\s*\n?(.*?)```', content, re.DOTALL)
+    if four_backticks:
+        logger.debug("Extracted content from four-backtick format")
+        return four_backticks.group(1).strip()
+    
+    # Case 2: Standard markdown block (```xml)
+    three_backticks = re.search(r'```(?:xml|)\s*\n?(.*?)```', content, re.DOTALL)
+    if three_backticks:
+        logger.debug("Extracted content from three-backtick format")
+        return three_backticks.group(1).strip()
+    
+    # Case 3: Multiple code blocks or incomplete blocks
+    if '```' in content:
+        logger.debug("Cleaning up multiple markdown code blocks")
+        cleaned = re.sub(r'```(?:xml|)?\s*\n?', '', content)
+        cleaned = cleaned.replace('```', '')
+        return cleaned.strip()
+    
+    # No markdown blocks found, return original
+    return content
+
+def extract_xml_content(content: str) -> str:
+    """
+    Extract XML content from between analysis_plan tags or restructure content to be valid XML.
+    
+    Args:
+        content: String potentially containing XML content
+        
+    Returns:
+        str: Properly formatted XML content
+    """
+    # Check if we have both reasoning and analysis_plan tags at the root level
+    if re.search(r'^\s*<reasoning>.*?</reasoning>\s*<analysis_plan>', content, re.DOTALL):
+        logger.info("Found both reasoning and analysis_plan tags, wrapping in root element")
+        # Clean up empty lines and normalize spacing to avoid parsing issues
+        cleaned_content = re.sub(r'\n\s*\n', '\n', content)
+        return f"<root>{cleaned_content}</root>"
+    
+    # Try to find <analysis_plan> tags
+    plan_match = re.search(r'<analysis_plan>(.*?)</analysis_plan>', content, re.DOTALL)
+    
+    # If not found, check for <reasoning> followed by <analysis_plan>
+    if not plan_match:
+        reasoning_and_plan = re.search(
+            r'<reasoning>.*?</reasoning>.*?<analysis_plan>(.*?)</analysis_plan>',
+            content, re.DOTALL
+        )
+        if reasoning_and_plan:
+            logger.info("Found analysis_plan after reasoning tag")
+            return reasoning_and_plan.group(1).strip()
+        else:
+            # If still not found, look for agent tags directly
+            agent_matches = re.findall(r'<agent_\d+.*?>.*?</agent_\d+>', content, re.DOTALL)
             if agent_matches:
-                xml_content = "\n".join(agent_matches)
-                logger.info("Extracted agent definitions without analysis_plan tag")
+                logger.info("Extracted agent definitions without analysis_plan wrapper")
+                return "\n".join(agent_matches)
             else:
-                logger.error("Could not find agent definitions in Phase 2 output")
-                return "<analysis_plan></analysis_plan>"
+                logger.error("Could not find any valid agent definitions")
+                return ""
     else:
-        xml_content = plan_match.group(1).strip()
+        return plan_match.group(1).strip()
+
+def clean_and_fix_xml(xml_content: str) -> str:
+    """
+    Clean and fix common XML issues.
+    
+    Args:
+        xml_content: Raw XML string with potential issues
+        
+    Returns:
+        str: Cleaned and fixed XML content
+    """
+    if not xml_content:
+        return "<analysis_plan></analysis_plan>"
+    
+    # Remove excessive whitespace and normalize newlines
+    xml_content = re.sub(r'\n\s*\n', '\n', xml_content)
     
     # Fix non-standard attribute format in agent tags
     # Replace <agent_1="Name"> with <agent_1 name="Name">
-    xml_content = re.sub(r'<(agent_\d+)="([^"]*)">', r'<\1 name="\2">', xml_content)
+    fixed_content = re.sub(r'<(agent_\d+)="([^"]*)">', r'<\1 name="\2">', xml_content)
     
     # Escape any potentially problematic characters in content between tags
-    # This is a quick and dirty fix - ideally we would parse and rebuild the XML properly
-    xml_content = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;)', '&amp;', xml_content)
+    fixed_content = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;)', '&amp;', fixed_content)
     
-    # Wrap in a root element
-    return f"<analysis_plan>\n{xml_content}\n</analysis_plan>"
-
+    # Replace any double quotes inside attribute values that are already in double quotes
+    # This is a common issue with model-generated XML
+    # Look for patterns like name="This is a "quoted" word"
+    quote_pattern = r'(\w+)="([^"]*)"([^"]*)"([^"]*)"'
+    while re.search(quote_pattern, fixed_content):
+        fixed_content = re.sub(quote_pattern, r'\1="\2\'\3\'\4"', fixed_content)
+    
+    # Fix missing quotes in attribute values
+    # Look for patterns like name=Some Value> and change to name="Some Value">
+    fixed_content = re.sub(r'(\w+)=([^"][^ >]*)([ >])', r'\1="\2"\3', fixed_content)
+    
+    # Remove any invalid XML characters
+    fixed_content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', fixed_content)
+    
+    # Wrap in a root element if not already present
+    if fixed_content.strip().startswith('<root>'):
+        return fixed_content  # Already has a root element
+    elif not fixed_content.strip().startswith('<analysis_plan'):
+        fixed_content = f"<analysis_plan>\n{fixed_content}\n</analysis_plan>"
+    
+    return fixed_content
 
 # ====================================================
-# Function: parse_agent_definition
-# This function takes an XML element representing an agent and extracts its information.
-# It pulls out details like ID, name, description, expertise, responsibilities, and file assignments.
+# Main Parser Functions
 # ====================================================
 
 def parse_agent_definition(agent_element: ET.Element) -> Dict:
@@ -164,67 +257,99 @@ def parse_agent_definition(agent_element: ET.Element) -> Dict:
     
     return agent_info
 
-
-# ====================================================
-# Function: extract_agent_fallback
-# This function is a backup plan for extracting agent information.
-# If the XML parsing fails, this function uses regular expressions to find and extract agent details.
-# ====================================================
-
-def extract_agent_fallback(phase2_output: str) -> List[Dict]:
+def extract_agent_fallback(content: str) -> List[Dict]:
     """
     Extract agent definitions using regex as a fallback when XML parsing fails.
     
     Args:
-        phase2_output: Raw output from Phase 2
+        content: Raw text containing agent definitions
         
     Returns:
         List[Dict]: List of agent definitions
     """
-    # First try to directly extract full agent blocks with regex
     agents = []
     
-    # Find all file assignment blocks to make sure we get all files
-    assignment_blocks = re.findall(r'<file_assignments>(.*?)</file_assignments>', phase2_output, re.DOTALL)
+    # Try to extract full analysis_plan section
+    plan_match = re.search(r'<analysis_plan>(.*?)</analysis_plan>', content, re.DOTALL)
+    if plan_match:
+        logger.info("Found analysis_plan section in fallback extraction")
+        content = plan_match.group(1)
     
-    # Try to extract agent IDs and names
-    # First, try to get agents with name attributes
-    agent_matches = re.findall(r'<(agent_\d+)\s+name="([^"]*)"', phase2_output, re.DOTALL)
+    # Find all file assignment blocks
+    assignment_blocks = re.findall(r'<file_assignments>(.*?)</file_assignments>', content, re.DOTALL)
     
-    # If no matches with name attribute, try simpler extraction
+    # Try to extract agent blocks with full details
+    agent_block_pattern = r'<agent_(\d+)[^>]*>.*?<description>(.*?)</description>.*?<file_assignments>(.*?)</file_assignments>'
+    agent_blocks = re.findall(agent_block_pattern, content, re.DOTALL)
+    
+    if agent_blocks:
+        logger.info(f"Found {len(agent_blocks)} complete agent blocks")
+        for num, desc, files_section in agent_blocks:
+            agent_id = f"agent_{num}"
+            
+            # Try to find the agent name
+            name_match = re.search(rf'<{agent_id}[^>]*name="([^"]*)"', content)
+            if name_match:
+                agent_name = name_match.group(1)
+            else:
+                name_tag_match = re.search(rf'<{agent_id}[^>]*>.*?<name>(.*?)</name>', content, re.DOTALL)
+                if name_tag_match:
+                    agent_name = name_tag_match.group(1).strip()
+                else:
+                    # Extract name from description if not found otherwise
+                    name_from_desc = re.search(r'^([^\.,:]+)', desc.strip())
+                    agent_name = name_from_desc.group(1).strip() if name_from_desc else f"Agent {num}"
+            
+            # Extract files
+            file_paths = re.findall(r'<file_path>(.*?)</file_path>', files_section, re.DOTALL)
+            file_paths = [path.strip() for path in file_paths if path.strip()]
+            
+            agent_info = {
+                "id": agent_id,
+                "name": agent_name.replace("&amp;", "and"),
+                "description": desc.strip().replace("&amp;", "and"),
+                "expertise": [],
+                "responsibilities": [],
+                "file_assignments": file_paths
+            }
+            
+            agents.append(agent_info)
+        
+        if agents:
+            return agents
+    
+    # If no complete blocks found, try simpler extraction
+    agent_matches = re.findall(r'<(agent_\d+)\s+name="([^"]*)"', content, re.DOTALL)
+    
+    # If not found, look for agent tags and try to find names inside
     if not agent_matches:
-        # Look for agent tags without attributes, then try to find name tags inside
-        agent_ids = re.findall(r'<(agent_\d+)[^>]*>', phase2_output, re.DOTALL)
+        agent_ids = re.findall(r'<(agent_\d+)[^>]*>', content, re.DOTALL)
         agent_matches = []
         
         for agent_id in agent_ids:
-            # Try to find a name tag inside this agent element
             name_pattern = f'<{agent_id}[^>]*>.*?<name>(.*?)</name>'
-            name_match = re.search(name_pattern, phase2_output, re.DOTALL)
+            name_match = re.search(name_pattern, content, re.DOTALL)
             name = name_match.group(1).strip() if name_match else f"Agent {agent_id.split('_')[1]}"
             agent_matches.append((agent_id, name))
     
-    # If we still have no matches, create generic agents based on assignment blocks
-    if not agent_matches:
-        agent_matches = [(f"agent_{i+1}", f"Agent {i+1}") for i in range(len(assignment_blocks))]
-    
-    # Extract file assignments for each agent
-    for i, (agent_id, agent_name) in enumerate(agent_matches):
-        if i < len(assignment_blocks):
-            block = assignment_blocks[i]
-            file_paths = re.findall(r'<file_path>(.*?)</file_path>', block, re.DOTALL)
-            file_paths = [path.strip() for path in file_paths if path.strip()]
+    # Process the matches if found
+    if agent_matches:
+        for i, (agent_id, agent_name) in enumerate(agent_matches):
+            file_paths = []
+            if i < len(assignment_blocks):
+                block = assignment_blocks[i]
+                file_paths = re.findall(r'<file_path>(.*?)</file_path>', block, re.DOTALL)
+                file_paths = [path.strip() for path in file_paths if path.strip()]
             
             # Try to get description
             desc_pattern = f'<{agent_id}[^>]*>.*?<description>(.*?)</description>'
-            desc_match = re.search(desc_pattern, phase2_output, re.DOTALL)
+            desc_match = re.search(desc_pattern, content, re.DOTALL)
             description = desc_match.group(1).strip() if desc_match else f"Agent {i+1}"
             
-            # Create agent dict without XML entity decoding issues
             agent_info = {
                 "id": agent_id,
-                "name": agent_name.replace("&amp;", "and"),  # Replace XML entity with "and"
-                "description": description.replace("&amp;", "and"),  # Replace XML entity with "and"
+                "name": agent_name.replace("&amp;", "and"),
+                "description": description.replace("&amp;", "and"),
                 "expertise": [],
                 "responsibilities": [],
                 "file_assignments": file_paths
@@ -232,8 +357,8 @@ def extract_agent_fallback(phase2_output: str) -> List[Dict]:
             
             agents.append(agent_info)
     
-    # If we still failed to extract agents, create a simple one with all files
-    if not agents:
+    # Last resort - if we have file assignments but no agents, create default agents
+    if not agents and assignment_blocks:
         all_files = []
         for block in assignment_blocks:
             file_paths = re.findall(r'<file_path>(.*?)</file_path>', block, re.DOTALL)
@@ -249,59 +374,150 @@ def extract_agent_fallback(phase2_output: str) -> List[Dict]:
                 "file_assignments": all_files
             })
     
+    # Ultra fallback - search for file paths anywhere in the content
+    if not agents:
+        last_chance_files = re.findall(r'<file_path>(.*?)</file_path>', content, re.DOTALL)
+        if last_chance_files:
+            logger.info("Last resort extraction found some files")
+            agents.append({
+                "id": "agent_1",
+                "name": "Emergency Fallback Agent",
+                "description": "Emergency fallback agent created when no other extraction methods worked",
+                "expertise": [],
+                "responsibilities": [],
+                "file_assignments": [f.strip() for f in last_chance_files if f.strip()]
+            })
+    
     return agents
 
-
-# ====================================================
-# Function: parse_agents_from_phase2
-# This is the main function for parsing agent definitions from the Phase 2 output.
-# It first tries to parse the output as XML, and if that fails, it uses the fallback function.
-# ====================================================
-
-def parse_agents_from_phase2(phase2_output: str) -> List[Dict]:
+def parse_agents_from_phase2(input_data: Union[Dict, str]) -> List[Dict]:
     """
-    Parse agent definitions from Phase 2 output.
+    Universal parser that handles any format of Phase 2 output.
+    
+    This function is the main entry point for parsing agent definitions.
+    It gracefully handles various input formats including:
+    - Dictionaries with "plan" or "agents" fields
+    - JSON strings
+    - XML wrapped in markdown code blocks
+    - Direct XML
     
     Args:
-        phase2_output: Raw output from Phase 2
+        input_data: Phase 2 output in any supported format
         
     Returns:
         List[Dict]: List of agent definitions
     """
+    logger.debug(f"Starting agent parsing with input type: {type(input_data).__name__}")
+    
+    # STEP 1: Check if agents are already available in the input
+    if isinstance(input_data, dict):
+        # Direct access to pre-parsed agents if available
+        if "agents" in input_data and isinstance(input_data["agents"], list):
+            agents = input_data["agents"]
+            if agents:
+                logger.info(f"[bold green]Agents:[/bold green] Found {len(agents)} pre-parsed agents")
+                return agents
+    
+    # STEP 2: Extract text from JSON if needed
+    content = extract_from_json(input_data)
+    
+    # STEP 3: Handle empty or None content
+    if not content:
+        logger.warning("[bold yellow]Warning:[/bold yellow] Received empty content after extraction")
+        return []
+    
+    # STEP 4: Extract from markdown code blocks if present
+    content = extract_from_markdown_block(content)
+    
+    # STEP 5: Try XML parsing first
     try:
-        # First attempt: Try to parse as proper XML
-        xml_content = create_xml_from_phase2_output(phase2_output)
+        # Extract XML content and clean it
+        xml_content = extract_xml_content(content)
+        xml_content = clean_and_fix_xml(xml_content)
+        
+        # Parse the XML
         root = ET.fromstring(xml_content)
         
         agents = []
-        # Look for any tags that start with "agent_"
-        for element in root:
-            if element.tag.startswith("agent_"):
-                agent_info = parse_agent_definition(element)
-                agents.append(agent_info)
+        # Extract agent definitions from the XML
+        
+        # Check if we wrapped in a root element
+        if root.tag == "root":
+            # Find the analysis_plan element
+            analysis_plan = root.find("analysis_plan")
+            if analysis_plan is not None:
+                for element in analysis_plan:
+                    if element.tag.startswith("agent_"):
+                        agent_info = parse_agent_definition(element)
+                        agents.append(agent_info)
+        else:
+            # Regular agent extraction
+            for element in root:
+                if element.tag.startswith("agent_"):
+                    agent_info = parse_agent_definition(element)
+                    agents.append(agent_info)
         
         if agents:
+            logger.info(f"[bold green]Success:[/bold green] Extracted {len(agents)} agents via XML parsing")
+            _log_detailed_agent_info(agents, "XML")
             return agents
-            
     except ET.ParseError as e:
-        logger.warning(f"XML parsing failed: {e}. Falling back to regex method.")
+        logger.debug(f"XML parsing failed: {e}. Falling back to regex method.")
+    except Exception as e:
+        logger.debug(f"Unexpected error during XML parsing: {str(e)}. Using fallback.")
     
-    # Fallback: Try the regex-based extraction
-    logger.info("Using regex-based extraction method")
-    return extract_agent_fallback(phase2_output)
+    # STEP 6: Fallback to regex extraction
+    logger.info("[bold yellow]Notice:[/bold yellow] Using regex-based extraction as fallback")
+    agents = extract_agent_fallback(content)
+    
+    # Report results
+    if agents:
+        logger.info(f"[bold green]Success:[/bold green] Extracted {len(agents)} agents via fallback extraction")
+        _log_detailed_agent_info(agents, "fallback")
+    else:
+        logger.error("[bold red]Error:[/bold red] Failed to extract any agents using all available methods")
+    
+    return agents
 
+def _log_detailed_agent_info(agents: List[Dict], method: str) -> None:
+    """
+    Helper function to log detailed agent information.
+    
+    Args:
+        agents: List of agent definitions
+        method: The method used to extract agents
+    """
+    logger.debug(f"===== AGENT SUMMARY ({method}) =====")
+    logger.debug(f"Total agents found: {len(agents)}")
+    
+    # Only log the first agent in detail at INFO level
+    if agents:
+        first_agent = agents[0]
+        logger.info(f"  [bold cyan]First Agent:[/bold cyan] {first_agent.get('name', 'Unknown')} with {len(first_agent.get('file_assignments', []))} files")
+    
+    # Log the rest at DEBUG level
+    for i, agent in enumerate(agents):
+        logger.debug(f"  Agent {i+1}: {agent.get('name', 'Unknown')} (ID: {agent.get('id', 'unknown')})")
+        logger.debug(f"    Description: {agent.get('description', 'No description')[:50]}...")
+        logger.debug(f"    Files assigned: {len(agent.get('file_assignments', []))}")
+        if agent.get('file_assignments'):
+            for j, file_path in enumerate(agent['file_assignments'][:3]):  # Show first 3 files
+                logger.debug(f"      - {file_path}")
+            if len(agent['file_assignments']) > 3:
+                logger.debug(f"      - ... and {len(agent['file_assignments']) - 3} more files")
+    
+    logger.debug("================================")
 
 # ====================================================
-# Function: get_agent_file_mapping
-# This function creates a dictionary that maps agent IDs to the list of files they are assigned to.
+# Utility Functions
 # ====================================================
 
-def get_agent_file_mapping(phase2_output: str) -> Dict[str, List[str]]:
+def get_agent_file_mapping(phase2_output: Union[Dict, str]) -> Dict[str, List[str]]:
     """
     Get a mapping of agent IDs to their assigned files.
     
     Args:
-        phase2_output: Raw output from Phase 2
+        phase2_output: Phase 2 output in any supported format
         
     Returns:
         Dict[str, List[str]]: Dictionary mapping agent IDs to file paths
@@ -314,17 +530,12 @@ def get_agent_file_mapping(phase2_output: str) -> Dict[str, List[str]]:
     
     return mapping
 
-# ====================================================
-# Function: get_all_file_assignments
-# This function gathers all the unique file paths that are assigned to any agent.
-# ====================================================
-
-def get_all_file_assignments(phase2_output: str) -> List[str]:
+def get_all_file_assignments(phase2_output: Union[Dict, str]) -> List[str]:
     """
     Get a list of all unique file paths assigned to any agent.
     
     Args:
-        phase2_output: Raw output from Phase 2
+        phase2_output: Phase 2 output in any supported format
         
     Returns:
         List[str]: List of all unique file paths

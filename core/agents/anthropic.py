@@ -151,7 +151,7 @@ class AnthropicArchitect(BaseArchitect):
             # Configure model parameters based on reasoning mode
             params = {
                 "model": self.model_name,
-                "max_tokens": 4000,
+                "max_tokens": 20000,
                 "messages": [{
                     "role": "user",
                     "content": prompt
@@ -165,19 +165,43 @@ class AnthropicArchitect(BaseArchitect):
                     "budget_tokens": 16000
                 }
             
+            # Get the model configuration name
+            from core.utils.tools.model_config_helper import get_model_config_name
+            model_config_name = get_model_config_name(self)
+            
+            agent_name = self.name or "Claude Architect"
+            logger.info(f"[bold purple]{agent_name}:[/bold purple] Sending request to {self.model_name} (Config: {model_config_name})" + 
+                       (" with reasoning" if self.reasoning == ReasoningMode.ENABLED else ""))
+            
             # Send a request to the Anthropic Claude API to analyze the given context.
             response = anthropic_client.messages.create(**params)
             
+            logger.info(f"[bold green]{agent_name}:[/bold green] Received response from {self.model_name}")
+            
+            # Handle different content block types
+            # When thinking is enabled, we might get thinking blocks first
+            text_content = ""
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    text_content = block.text
+                    break  # Found the text content, so break the loop
+            
+            # If no text content was found, check if there's any content at all
+            if not text_content and response.content:
+                # If only thinking blocks were returned, use a fallback message
+                text_content = "Analysis completed but no text content was returned. Check logs for more details."
+            
             # Return the agent's findings.
             return {
-                "agent": self.name or "Claude Architect",
-                "findings": response.content[0].text
+                "agent": agent_name,
+                "findings": text_content
             }
         except Exception as e:
-            logger.error(f"Error in {self.name or 'Claude Architect'} analysis: {str(e)}")
+            agent_name = self.name or "Claude Architect"
+            logger.error(f"[bold red]Error in {agent_name}:[/bold red] {str(e)}")
             # Return an error message if something goes wrong.
             return {
-                "agent": self.name or "Claude Architect",
+                "agent": agent_name,
                 "error": str(e)
             }
     
@@ -277,7 +301,7 @@ class AnthropicArchitect(BaseArchitect):
             # Configure model parameters based on reasoning mode
             params = {
                 "model": self.model_name,
-                "max_tokens": 4000,
+                "max_tokens": 20000,
                 "messages": [{
                     "role": "user",
                     "content": content
@@ -294,10 +318,23 @@ class AnthropicArchitect(BaseArchitect):
             # Send a request to the Anthropic Claude API
             response = anthropic_client.messages.create(**params)
             
+            # Handle different content block types
+            # When thinking is enabled, we might get thinking blocks first
+            text_content = ""
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    text_content = block.text
+                    break  # Found the text content, so break the loop
+            
+            # If no text content was found, check if there's any content at all
+            if not text_content and response.content:
+                # If only thinking blocks were returned, use a fallback message
+                text_content = "Consolidation completed but no text content was returned. Check logs for more details."
+            
             # Return the consolidated report
             return {
                 "phase": "Consolidation",
-                "report": response.content[0].text
+                "report": text_content
             }
         except Exception as e:
             logger.error(f"Error in consolidation: {str(e)}")
@@ -305,76 +342,3 @@ class AnthropicArchitect(BaseArchitect):
                 "phase": "Consolidation",
                 "error": str(e)
             }
-
-# ====================================================
-# Legacy ClaudeAgent Class 
-# Maintained for backward compatibility
-# ====================================================
-
-class ClaudeAgent:
-    """
-    Agent class for interacting with Anthropic's Claude models.
-    
-    This class provides a structured way to create specialized agents that use
-    Claude models for different analysis tasks.
-    
-    Note: This class is maintained for backward compatibility. New code should use
-    AnthropicArchitect instead.
-    """
-    
-    def __init__(self, name: str, role: str, responsibilities: List[str], prompt_template: str = None):
-        """
-        Initialize a Claude agent with a specific name, role, and responsibilities.
-        
-        Args:
-            name: The name of the agent (e.g., "Structure Agent")
-            role: The role of the agent (e.g., "analyzing directory and file organization")
-            responsibilities: A list of specific tasks the agent is responsible for
-            prompt_template: Optional custom prompt template to use instead of the default
-        """
-        self.name = name
-        self.role = role
-        self.responsibilities = responsibilities
-        
-        # Store the provided prompt template first
-        self._provided_prompt_template = prompt_template
-        
-        # Create underlying AnthropicArchitect
-        self._architect = AnthropicArchitect(
-            name=name,
-            role=role,
-            responsibilities=responsibilities,
-            prompt_template=prompt_template
-        )
-        
-        # Now initialize the prompt_template properly
-        self.prompt_template = prompt_template or self._get_default_prompt_template()
-    
-    def _get_default_prompt_template(self) -> str:
-        """Get the default prompt template for the agent."""
-        # Always delegate to the architect to get the default template
-        return self._architect._get_default_prompt_template()
-    
-    def format_prompt(self, context: Dict[str, Any]) -> str:
-        """
-        Format the prompt template with the agent's information and context.
-        
-        Args:
-            context: Dictionary containing the context for analysis
-            
-        Returns:
-            Formatted prompt string
-        """
-        return self._architect.format_prompt(context)
-
-    async def analyze(self, context: Dict) -> Dict:
-        """
-        Run agent analysis using Claude-3-7-sonnet model.
-        
-        Args:
-            context: Dictionary containing the context for analysis
-            
-        Returns:
-            Dictionary containing the agent's findings or error information
-        """
-        return await self._architect.analyze(context)

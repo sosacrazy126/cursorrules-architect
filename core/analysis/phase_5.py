@@ -20,6 +20,7 @@ import logging
 from typing import Dict
 from anthropic import Anthropic
 from config.prompts.phase_5_prompts import PHASE_5_PROMPT, format_phase5_prompt
+from config.agents import get_architect_for_phase  # Added import for dynamic model configuration
 
 # =============================================================================
 # Initialize the Anthropic Client and Logger
@@ -37,30 +38,28 @@ class Phase5Analysis:
     """
     Class responsible for Phase 5 (Consolidation) of the project analysis.
     
-    This phase uses Claude to consolidate the results from all previous phases
-    into a comprehensive final report.
+    This phase uses a model configured in config/agents.py to consolidate 
+    the results from all previous phases into a comprehensive final report.
     """
     
     # =========================================================================
     # Initialization Method
-    # Sets up the Phase 5 analysis with the specified Claude model.
+    # Sets up the Phase 5 analysis with the model from configuration.
     # =========================================================================
-    def __init__(self, model: str = "claude-3-7-sonnet-20250219"):
+    def __init__(self):
         """
-        Initialize the Phase 5 analysis with the specified Claude model.
-        
-        Args:
-            model: The Claude model to use (default: "claude-3-7-sonnet-20250219")
+        Initialize the Phase 5 analysis with the architect from configuration.
         """
-        self.model = model
+        # Use the factory function to get the appropriate architect based on configuration
+        self.architect = get_architect_for_phase("phase5")
     
     # =========================================================================
     # Run Method
-    # Executes the consolidation phase, sending a request to the Anthropic API.
+    # Executes the consolidation phase using the configured model.
     # =========================================================================
     async def run(self, all_results: Dict) -> Dict:
         """
-        Run the Consolidation Phase using Claude.
+        Run the Consolidation Phase using the configured model.
         
         Args:
             all_results: Dictionary containing the results from all previous phases
@@ -72,24 +71,27 @@ class Phase5Analysis:
             # Format the prompt using the template from the prompts file
             prompt = format_phase5_prompt(all_results)
             
-            # Send a request to the Anthropic Claude API to consolidate the
-            # results from all previous phases into a final report.
-            response = anthropic_client.messages.create(
-                model=self.model,
-                max_tokens=4000,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
-            )
-
-            # Return the consolidated report.
-            return {
-                "phase": "Consolidation",
-                "report": response.content[0].text
-            }
+            logger.info("[bold]Phase 5:[/bold] Consolidating results from all previous phases")
+            
+            # Use the architect to consolidate results
+            result = await self.architect.consolidate_results(all_results, prompt)
+            
+            logger.info("[bold green]Phase 5:[/bold green] Consolidation completed successfully")
+            
+            # Return the result, ensuring it has the expected format
+            if "report" not in result and "error" not in result:
+                if "phase" in result and isinstance(result.get("phase"), str):
+                    return result  # Already in the expected format
+                else:
+                    # Extract findings if available
+                    findings = result.get("findings", "No consolidated report generated")
+                    return {
+                        "phase": "Consolidation",
+                        "report": findings if isinstance(findings, str) else json.dumps(findings)
+                    }
+            return result
         except Exception as e:
-            logger.error(f"Error in Phase 5: {str(e)}")
+            logger.error(f"[bold red]Error in Phase 5:[/bold red] {str(e)}")
             return {
                 "phase": "Consolidation",
                 "error": str(e)

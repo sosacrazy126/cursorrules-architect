@@ -17,6 +17,15 @@ from rich.console import Console  # For rich text output in the console
 from rich.logging import RichHandler  # For enhanced logging with rich formatting
 from rich.progress import Progress, SpinnerColumn, TextColumn  # For displaying progress bars
 import time  # For measuring time taken for analysis
+from dotenv import load_dotenv  # For loading environment variables from .env file
+
+# Load environment variables from .env file if it exists
+if os.path.exists('.env'):
+    load_dotenv()
+    logging.info("Loaded environment variables from .env file")
+else:
+    logging.warning("No .env file found. Make sure API keys are set in environment variables.")
+
 from openai import OpenAI  # For interacting with the OpenAI API
 from anthropic import Anthropic  # For interacting with the Anthropic API
 import asyncio  # For asynchronous programming (running multiple tasks concurrently)

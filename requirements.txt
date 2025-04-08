@@ -5,3 +5,6 @@ pathlib
 pydantic
 beautifulsoup4
 lxml
+openai
+google-genai
+python-dotenv

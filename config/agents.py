@@ -128,13 +128,13 @@ GEMINI_WITH_REASONING = ModelConfig(
 # Default model configuration
 MODEL_CONFIG = {
     # Phase 1: Initial Discovery
-    "phase1": CLAUDE_BASIC,
+    "phase1": GEMINI_WITH_REASONING,
     
     # Phase 2: Methodical Planning
     "phase2": GEMINI_WITH_REASONING,
     
     # Phase 3: Deep Analysis
-    "phase3": O3_MINI_HIGH,
+    "phase3": GEMINI_WITH_REASONING,
     
     # Phase 4: Synthesis
     "phase4": O1_HIGH,

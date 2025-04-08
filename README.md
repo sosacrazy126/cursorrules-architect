@@ -97,9 +97,6 @@ python main.py -p /path/to/your/project
 ### Advanced Options
 
 ```bash
-# Use the new architecture (recommended)
-python main.py -p /path/to/your/project -n
-
 # Specify output location (deprecated, now uses standardized output)
 python main.py -p /path/to/your/project -o output.txt
 ```

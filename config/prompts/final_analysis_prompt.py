@@ -156,8 +156,8 @@ Provide explicit, numbered requirements that govern development behavior. Use fo
 ```
 # Your Requirements:
 1. ONLY USE camelCase naming style for all files and folders!
-2. **Anthropic DEVELOPMENT**: You are required to use the brand new latest model: **'claude-3-5-sonnet-20241022'**!!
-   - !!!NEVER use 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'!!!
+2. **Anthropic DEVELOPMENT**: You are required to use the brand new latest model: **'claude-3-5-sonnet-{current_year}1022'**!!
+   - !!!NEVER use 'claude-3-sonnet-{current_year}0229' or 'claude-3-haiku-{current_year}0307'!!!
 3. Develop systematically and logically, but DO NOT over complicate the codebase!
 
 ```

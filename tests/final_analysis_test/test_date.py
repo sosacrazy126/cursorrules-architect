@@ -51,6 +51,24 @@ def test_temporal_framework():
             end = min(len(lines), i + 5)
             print("\n".join(lines[start:end]))
             print("-" * 50)
+    
+    # Check for claude model references with the year
+    check_model_version_years(prompt, current_year)
+
+def check_model_version_years(prompt, current_year):
+    """Check that model version dates use the current year placeholder."""
+    expected_claude_model = f"claude-3-5-sonnet-{current_year}1022"
+    
+    if expected_claude_model in prompt:
+        print(f"✅ Claude model version successfully updated with '{expected_claude_model}'")
+    else:
+        print(f"❌ Claude model version not updated correctly. Expected to find '{expected_claude_model}'")
+    
+    expected_older_model = f"claude-3-sonnet-{current_year}0229"
+    if expected_older_model in prompt:
+        print(f"✅ Older Claude model reference successfully updated with '{expected_older_model}'")
+    else:
+        print(f"❌ Older Claude model reference not updated correctly. Expected to find '{expected_older_model}'")
 
 if __name__ == "__main__":
     test_temporal_framework() 

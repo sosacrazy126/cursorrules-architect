@@ -6,6 +6,8 @@ Centralizing prompts here makes it easier to edit and maintain them without
 modifying the core logic of the agents.
 """
 
+from datetime import datetime
+
 # Base prompt template for all Phase 1 agents
 PHASE_1_BASE_PROMPT = """You are the {agent_name}, responsible for {agent_role}.
 

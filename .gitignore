@@ -1,31 +1,48 @@
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Python
+# Python cache files
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+*.class
+.pytest_cache/
 
-# Project specific
-project_tree_*
-our-notes/
+# Test output files
+tests/phase_1_test/output/*.json
+tests/phase_2_test/output/*.json
+tests/phase_2_test/output/*.xml
+tests/phase_3_test/output/*.json
+tests/phase_4_test/output/*.json
+tests/phase_4_test/output/*.md
+tests/phase_5_test/output/*.json
+tests/phase_5_test/output/*.md
+tests/final_analysis_test/output/*.json
+tests/final_analysis_test/output/*.md
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.python-version
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+tests/final_analysis_test/run_test.py
+
+# IDE specific files
+tests/final_analysis_test/test_date.py
+.idea/
+.vscode/
+.gitignore
+.DS_Store
+
+# Generated files
+*.log
+*.json.tmp
+.coverage
+htmlcov/
+coverage.xml

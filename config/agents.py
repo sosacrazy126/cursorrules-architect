@@ -137,13 +137,13 @@ MODEL_CONFIG = {
     "phase3": GEMINI_WITH_REASONING,
     
     # Phase 4: Synthesis
-    "phase4": O1_HIGH,
+    "phase4": GEMINI_WITH_REASONING,
     
     # Phase 5: Consolidation
-    "phase5": DEEPSEEK_REASONER,
+    "phase5": GEMINI_WITH_REASONING,
     
     # Final Analysis
-    "final": CLAUDE_WITH_REASONING,
+    "final": GEMINI_WITH_REASONING,
 }
 
 # ====================================================

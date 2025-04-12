@@ -28,8 +28,8 @@ from config.prompts.final_analysis_prompt import FINAL_ANALYSIS_PROMPT, format_f
 # It creates a client object that allows us to interact with OpenAI.
 # ====================================================
 
-# Initialize the OpenAI client
-openai_client = OpenAI()
+# Initialize the OpenAI client as None first - will be initialized when needed
+openai_client = None
 
 # ====================================================
 # Setup Logger
@@ -199,6 +199,12 @@ Format your response as a structured report with clear sections and findings."""
             Dictionary containing the analysis results or error information
         """
         try:
+            # Initialize OpenAI client when needed
+            global openai_client
+            if openai_client is None:
+                openai_client = OpenAI()
+                logger.info("Initialized OpenAI client from OpenAIArchitect.analyze")
+            
             # Check if the context already contains a formatted prompt
             if "formatted_prompt" in context:
                 content = context["formatted_prompt"]
@@ -248,6 +254,12 @@ Format your response as a structured report with clear sections and findings."""
             Dictionary containing the analysis plan
         """
         try:
+            # Initialize OpenAI client when needed
+            global openai_client
+            if openai_client is None:
+                openai_client = OpenAI()
+                logger.info("Initialized OpenAI client from OpenAIArchitect.create_analysis_plan")
+            
             # Use the provided prompt or the default one
             content = prompt if prompt else format_phase2_prompt(phase1_results)
             
@@ -281,6 +293,12 @@ Format your response as a structured report with clear sections and findings."""
             Dictionary containing the synthesis
         """
         try:
+            # Initialize OpenAI client when needed
+            global openai_client
+            if openai_client is None:
+                openai_client = OpenAI()
+                logger.info("Initialized OpenAI client from OpenAIArchitect.synthesize_findings")
+            
             # Use the provided prompt or the default one
             content = prompt if prompt else format_phase4_prompt(phase3_results)
             
@@ -314,6 +332,12 @@ Format your response as a structured report with clear sections and findings."""
             Dictionary containing the final analysis
         """
         try:
+            # Initialize OpenAI client when needed
+            global openai_client
+            if openai_client is None:
+                openai_client = OpenAI()
+                logger.info("Initialized OpenAI client from OpenAIArchitect.final_analysis")
+            
             # Use the provided prompt or the default one
             content = prompt if prompt else format_final_analysis_prompt(consolidated_report)
             
@@ -350,6 +374,12 @@ Format your response as a structured report with clear sections and findings."""
             Dictionary containing the consolidated report
         """
         try:
+            # Initialize OpenAI client when needed
+            global openai_client
+            if openai_client is None:
+                openai_client = OpenAI()
+                logger.info("Initialized OpenAI client from OpenAIArchitect.consolidate_results")
+            
             # Use the provided prompt or format a default one
             content = prompt if prompt else f"Consolidate these results into a comprehensive report:\n\n{json.dumps(all_results, indent=2)}"
             
@@ -403,6 +433,8 @@ class OpenAIAgent:
             self._architect = OpenAIArchitect(model_name=model, reasoning=ReasoningMode.TEMPERATURE, temperature=temperature)
         else:
             self._architect = OpenAIArchitect(model_name=model)
+        
+        # Note: The OpenAI client will be initialized on-demand when needed in the architect methods
     
     async def create_analysis_plan(self, phase1_results: Dict, prompt: Optional[str] = None) -> Dict:
         """

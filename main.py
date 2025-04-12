@@ -47,11 +47,6 @@ from core.analysis import (
 # Import the helper to get model configuration names
 from core.utils.tools.model_config_helper import get_model_config_name
 
-# Initialize clients for OpenAI and Anthropic APIs.  These are used to access
-# external AI models.
-openai_client = OpenAI()
-anthropic_client = Anthropic()
-
 # Setup logging.  This configures how log messages are displayed.
 console = Console()
 
@@ -93,6 +88,27 @@ logger.addFilter(http_filter)
 for logger_name in ["openai", "httpx", "httpcore", "anthropic", "google", "genai"]:
     mod_logger = logging.getLogger(logger_name)
     mod_logger.setLevel(logging.WARNING)  # Only show warnings and errors
+
+# Initialize clients only for the providers that are actually used
+from config.agents import MODEL_CONFIG, ModelProvider
+
+# Check which providers are used in the configuration
+used_providers = {config.provider for config in MODEL_CONFIG.values()}
+
+# Only initialize clients for providers that are actually used
+if ModelProvider.OPENAI in used_providers:
+    openai_client = OpenAI()
+    logger.info("Initialized OpenAI client")
+else:
+    openai_client = None
+    logger.info("OpenAI client not initialized (not used in any phase)")
+
+if ModelProvider.ANTHROPIC in used_providers:
+    anthropic_client = Anthropic()
+    logger.info("Initialized Anthropic client")
+else:
+    anthropic_client = None
+    logger.info("Anthropic client not initialized (not used in any phase)")
 
 # ====================================================
 # Section 2: Project Analyzer Class

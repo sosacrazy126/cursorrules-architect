@@ -23,8 +23,8 @@ from core.agents.base import BaseArchitect, ModelProvider, ReasoningMode  # Impo
 # This section initializes the client for interacting with the Anthropic API.
 # ====================================================
 
-# Initialize the Anthropic client
-anthropic_client = Anthropic()
+# Initialize the Anthropic client as None first - will be initialized when needed
+anthropic_client = None
 
 # ====================================================
 # Get Logger
@@ -141,6 +141,12 @@ class AnthropicArchitect(BaseArchitect):
             Dictionary containing the agent's findings or error information
         """
         try:
+            # Initialize Anthropic client when needed
+            global anthropic_client
+            if anthropic_client is None:
+                anthropic_client = Anthropic()
+                logger.info("Initialized Anthropic client from AnthropicArchitect.analyze")
+            
             # Check if the context already contains a formatted prompt
             if "formatted_prompt" in context:
                 prompt = context["formatted_prompt"]
@@ -212,9 +218,6 @@ class AnthropicArchitect(BaseArchitect):
         """
         Create an analysis plan based on Phase 1 results.
         
-        This is implemented for compatibility with the base class but not the
-        primary function of the Anthropic model in the current architecture.
-        
         Args:
             phase1_results: Dictionary containing the results from Phase 1
             prompt: Optional custom prompt to use
@@ -222,13 +225,50 @@ class AnthropicArchitect(BaseArchitect):
         Returns:
             Dictionary containing the analysis plan
         """
-        context = {"phase1_results": phase1_results, "formatted_prompt": prompt} if prompt else {"phase1_results": phase1_results}
-        result = await self.analyze(context)
-        
-        return {
-            "plan": result.get("findings", "No plan generated"),
-            "error": result.get("error", None)
-        }
+        try:
+            # Initialize Anthropic client when needed
+            global anthropic_client
+            if anthropic_client is None:
+                anthropic_client = Anthropic()
+                logger.info("Initialized Anthropic client from AnthropicArchitect.create_analysis_plan")
+            
+            # Format the context for analysis plan creation
+            context = {"phase1_results": phase1_results}
+            
+            # Use the provided prompt or format one
+            content = prompt if prompt else self.format_prompt(context)
+            
+            # Configure model parameters based on reasoning mode
+            params = {
+                "model": self.model_name,
+                "max_tokens": 12000,
+                "messages": [{
+                    "role": "user",
+                    "content": content
+                }]
+            }
+            
+            # Add thinking parameter if reasoning is enabled
+            if self.reasoning == ReasoningMode.ENABLED:
+                params["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": 16000
+                }
+            
+            # Send the request to Claude
+            response = anthropic_client.messages.create(**params)
+            
+            # Handle different content block types
+            text_content = ""
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    text_content = block.text
+                    break
+            
+            return {"plan": text_content}
+        except Exception as e:
+            logger.error(f"Error in analysis plan creation: {str(e)}")
+            return {"error": str(e)}
     
     # ====================================================
     # Synthesize Findings - Not primary function but implemented for compatibility
@@ -237,9 +277,6 @@ class AnthropicArchitect(BaseArchitect):
         """
         Synthesize findings from Phase 3.
         
-        This is implemented for compatibility with the base class but not the
-        primary function of the Anthropic model in the current architecture.
-        
         Args:
             phase3_results: Dictionary containing the results from Phase 3
             prompt: Optional custom prompt to use
@@ -247,13 +284,50 @@ class AnthropicArchitect(BaseArchitect):
         Returns:
             Dictionary containing the synthesis
         """
-        context = {"phase3_results": phase3_results, "formatted_prompt": prompt} if prompt else {"phase3_results": phase3_results}
-        result = await self.analyze(context)
-        
-        return {
-            "analysis": result.get("findings", "No synthesis generated"),
-            "error": result.get("error", None)
-        }
+        try:
+            # Initialize Anthropic client when needed
+            global anthropic_client
+            if anthropic_client is None:
+                anthropic_client = Anthropic()
+                logger.info("Initialized Anthropic client from AnthropicArchitect.synthesize_findings")
+            
+            # Format the context for synthesis
+            context = {"phase3_results": phase3_results}
+            
+            # Use the provided prompt or format one
+            content = prompt if prompt else self.format_prompt(context)
+            
+            # Configure model parameters based on reasoning mode
+            params = {
+                "model": self.model_name,
+                "max_tokens": 12000,
+                "messages": [{
+                    "role": "user",
+                    "content": content
+                }]
+            }
+            
+            # Add thinking parameter if reasoning is enabled
+            if self.reasoning == ReasoningMode.ENABLED:
+                params["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": 16000
+                }
+            
+            # Send the request to Claude
+            response = anthropic_client.messages.create(**params)
+            
+            # Handle different content block types
+            text_content = ""
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    text_content = block.text
+                    break
+            
+            return {"analysis": text_content}
+        except Exception as e:
+            logger.error(f"Error in synthesis: {str(e)}")
+            return {"error": str(e)}
     
     # ====================================================
     # Final Analysis - Not primary function but implemented for compatibility
@@ -262,9 +336,6 @@ class AnthropicArchitect(BaseArchitect):
         """
         Perform final analysis on the consolidated report.
         
-        This is implemented for compatibility with the base class but not the
-        primary function of the Anthropic model in the current architecture.
-        
         Args:
             consolidated_report: Dictionary containing the consolidated report
             prompt: Optional custom prompt to use
@@ -272,13 +343,50 @@ class AnthropicArchitect(BaseArchitect):
         Returns:
             Dictionary containing the final analysis
         """
-        context = {"consolidated_report": consolidated_report, "formatted_prompt": prompt} if prompt else {"consolidated_report": consolidated_report}
-        result = await self.analyze(context)
-        
-        return {
-            "analysis": result.get("findings", "No final analysis generated"),
-            "error": result.get("error", None)
-        }
+        try:
+            # Initialize Anthropic client when needed
+            global anthropic_client
+            if anthropic_client is None:
+                anthropic_client = Anthropic()
+                logger.info("Initialized Anthropic client from AnthropicArchitect.final_analysis")
+            
+            # Format the context for final analysis
+            context = {"consolidated_report": consolidated_report}
+            
+            # Use the provided prompt or format one
+            content = prompt if prompt else self.format_prompt(context)
+            
+            # Configure model parameters based on reasoning mode
+            params = {
+                "model": self.model_name,
+                "max_tokens": 12000,
+                "messages": [{
+                    "role": "user",
+                    "content": content
+                }]
+            }
+            
+            # Add thinking parameter if reasoning is enabled
+            if self.reasoning == ReasoningMode.ENABLED:
+                params["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": 16000
+                }
+            
+            # Send the request to Claude
+            response = anthropic_client.messages.create(**params)
+            
+            # Handle different content block types
+            text_content = ""
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    text_content = block.text
+                    break
+            
+            return {"analysis": text_content}
+        except Exception as e:
+            logger.error(f"Error in final analysis: {str(e)}")
+            return {"error": str(e)}
     
     # ====================================================
     # Consolidate Results - Primary method for Phase 5
@@ -295,6 +403,12 @@ class AnthropicArchitect(BaseArchitect):
             Dictionary containing the consolidated report
         """
         try:
+            # Initialize Anthropic client when needed
+            global anthropic_client
+            if anthropic_client is None:
+                anthropic_client = Anthropic()
+                logger.info("Initialized Anthropic client from AnthropicArchitect.consolidate_results")
+            
             # Use the provided prompt or format a default one
             content = prompt if prompt else f"Consolidate these results into a comprehensive report:\n\n{json.dumps(all_results, indent=2)}"
             
@@ -325,11 +439,6 @@ class AnthropicArchitect(BaseArchitect):
                 if hasattr(block, 'text'):
                     text_content = block.text
                     break  # Found the text content, so break the loop
-            
-            # If no text content was found, check if there's any content at all
-            if not text_content and response.content:
-                # If only thinking blocks were returned, use a fallback message
-                text_content = "Consolidation completed but no text content was returned. Check logs for more details."
             
             # Return the consolidated report
             return {

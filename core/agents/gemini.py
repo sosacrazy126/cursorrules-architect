@@ -16,6 +16,7 @@ import json  # Used for handling JSON data
 import logging  # Used for logging events and errors
 import asyncio  # For async operations
 import os  # For accessing environment variables
+import random  # For exponential backoff jitter
 from typing import Dict, List, Any, Optional  # Used for type hinting
 from google import genai  # The Google Gemini API client
 from google.genai import types  # Types for Gemini API configuration
@@ -197,8 +198,8 @@ class GeminiArchitect(BaseArchitect):
             logger.info(f"[bold green]{agent_name}:[/bold green] Sending request to {model} (Config: {model_config_name})" + 
                        (" with thinking" if self.reasoning == ReasoningMode.ENABLED else ""))
             
-            # Send a request to the Gemini API to analyze the given context.
-            response = self.gemini_client.models.generate_content(
+            # Send a request to the Gemini API with retry logic
+            response = await self._make_api_call_with_retry(
                 model=model,
                 contents=[prompt],
                 config=config
@@ -296,6 +297,74 @@ class GeminiArchitect(BaseArchitect):
         }
     
     # ====================================================
+    # Retry Logic with Exponential Backoff
+    # ====================================================
+    
+    async def _make_api_call_with_retry(
+        self, 
+        model: str, 
+        contents: List[str], 
+        config: Optional[types.GenerateContentConfig],
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+        max_delay: float = 60.0
+    ):
+        """
+        Make API call with exponential backoff retry logic.
+        
+        Args:
+            model: The model to use
+            contents: The content to send
+            config: Optional configuration
+            max_retries: Maximum number of retry attempts
+            base_delay: Base delay in seconds
+            max_delay: Maximum delay in seconds
+            
+        Returns:
+            API response
+            
+        Raises:
+            Exception: If all retries are exhausted
+        """
+        last_exception = None
+        
+        for attempt in range(max_retries + 1):
+            try:
+                # Make the API call
+                if config:
+                    response = self.gemini_client.models.generate_content(
+                        model=model,
+                        contents=contents,
+                        config=config
+                    )
+                else:
+                    response = self.gemini_client.models.generate_content(
+                        model=model,
+                        contents=contents
+                    )
+                return response
+                
+            except Exception as e:
+                last_exception = e
+                agent_name = self.name or "Gemini Architect"
+                
+                # Log the attempt
+                if attempt < max_retries:
+                    logger.warning(f"[bold yellow]{agent_name}:[/bold yellow] API call failed (attempt {attempt + 1}/{max_retries + 1}): {str(e)}")
+                    
+                    # Calculate delay with exponential backoff and jitter
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    jittered_delay = delay * (0.5 + random.random() * 0.5)  # Add 50% jitter
+                    
+                    logger.info(f"[bold cyan]{agent_name}:[/bold cyan] Retrying in {jittered_delay:.1f} seconds...")
+                    await asyncio.sleep(jittered_delay)
+                else:
+                    logger.error(f"[bold red]{agent_name}:[/bold red] All {max_retries + 1} attempts failed. Last error: {str(e)}")
+        
+        # If we get here, all retries have been exhausted
+        raise last_exception
+    
+    # ====================================================
     # Consolidate Results - Primary method for Phase 5
     # ====================================================
     async def consolidate_results(self, all_results: Dict, prompt: Optional[str] = None) -> Dict:
@@ -324,10 +393,11 @@ class GeminiArchitect(BaseArchitect):
                 elif "gemini-2.5-pro" in model:
                     model = "gemini-2.5-pro-exp-03-25"
             
-            # Send a request to the Gemini API
-            response = self.gemini_client.models.generate_content(
+            # Send a request to the Gemini API with retry logic
+            response = await self._make_api_call_with_retry(
                 model=model,
-                contents=[content]
+                contents=[content],
+                config=None
             )
             
             # Return the consolidated report

@@ -153,10 +153,35 @@ class Phase3Analysis:
                 # Add the analysis task
                 analysis_tasks.append(architect.analyze(context))
             
-            # Run all analysis tasks in parallel
-            results = await asyncio.gather(*analysis_tasks)
+            # Run all analysis tasks in parallel with error handling
+            results = await asyncio.gather(*analysis_tasks, return_exceptions=True)
             
-            logging.info(f"[bold green]Phase 3:[/bold green] All {len(analysis_tasks)} agents completed their analysis")
+            # Process results and handle exceptions
+            successful_results = []
+            failed_agents = []
+            
+            for i, result in enumerate(results):
+                agent_name = self.architects[i][1].get("name", f"Agent {i+1}")
+                
+                if isinstance(result, Exception):
+                    logging.error(f"[bold red]Error in {agent_name}:[/bold red] {str(result)}")
+                    failed_agents.append({
+                        "agent_name": agent_name,
+                        "error": str(result),
+                        "error_type": type(result).__name__
+                    })
+                else:
+                    successful_results.append(result)
+            
+            if failed_agents:
+                logging.warning(f"[bold yellow]Phase 3:[/bold yellow] {len(failed_agents)} agents failed, {len(successful_results)} succeeded")
+                for failed in failed_agents:
+                    logging.warning(f"  Failed: {failed['agent_name']} ({failed['error_type']})")
+            else:
+                logging.info(f"[bold green]Phase 3:[/bold green] All {len(analysis_tasks)} agents completed their analysis")
+            
+            # Use successful results for the final output
+            results = successful_results
             
             # Return the results with phase information
             return {

@@ -110,13 +110,13 @@ DEEPSEEK_REASONER = ModelConfig(
 # Gemini configurations
 GEMINI_BASIC = ModelConfig(
     provider=ModelProvider.GEMINI,
-    model_name="gemini-2.0-flash",
+    model_name="gemini-2.5-flash-preview-05-20",
     reasoning=ReasoningMode.DISABLED
 )
 
 GEMINI_WITH_REASONING = ModelConfig(
     provider=ModelProvider.GEMINI,
-    model_name="gemini-2.5-pro-exp-03-25",
+    model_name="gemini-2.5-flash-preview-05-20",
     reasoning=ReasoningMode.ENABLED
 )
 
@@ -128,7 +128,7 @@ GEMINI_WITH_REASONING = ModelConfig(
 # Default model configuration
 MODEL_CONFIG = {
     # Phase 1: Initial Discovery
-    "phase1": GEMINI_WITH_REASONING,
+    "phase1": GEMINI_BASIC,
     
     # Phase 2: Methodical Planning
     "phase2": GEMINI_WITH_REASONING,
@@ -137,10 +137,10 @@ MODEL_CONFIG = {
     "phase3": GEMINI_WITH_REASONING,
     
     # Phase 4: Synthesis
-    "phase4": GEMINI_WITH_REASONING,
+    "phase4": GEMINI_BASIC,
     
     # Phase 5: Consolidation
-    "phase5": GEMINI_WITH_REASONING,
+    "phase5": GEMINI_BASIC,
     
     # Final Analysis
     "final": GEMINI_WITH_REASONING,

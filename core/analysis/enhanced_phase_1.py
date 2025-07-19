@@ -1,450 +1,503 @@
 """
 core/analysis/enhanced_phase_1.py
 
-Enhanced Phase 1 analysis with context engineering integration.
-Incorporates atomic prompting patterns for optimized initial discovery.
+Enhanced Phase 1 Analysis with Context Engineering Integration
+ENHANCED: Critical error handling and fallback mechanisms added
 """
 
 import asyncio
 import logging
+import time
+import traceback
 from typing import Dict, List, Any, Optional
-from ..analysis.phase_1 import Phase1Analysis
-from ..context_engineering.foundations import ContextFoundations, AtomicPrompt
-from ..context_engineering.field_dynamics import FieldDynamics, FieldType
-from ..context_engineering.cognitive_tools import CognitiveToolkit
+from core.analysis.phase_1 import Phase1Analysis
+from core.context_engineering.integration_manager import (
+    ContextEngineeringIntegrationManager, 
+    IntegrationConfig,
+    ContextEngineeringError,
+    validate_context_engineering_dependencies,
+    sanitize_input_data
+)
 
 logger = logging.getLogger(__name__)
 
+class EnhancedPhase1Error(Exception):
+    """Error specific to Enhanced Phase 1 operations."""
+    pass
+
 class ContextAwarePhase1Analysis(Phase1Analysis):
-    """
-    Enhanced Phase 1 analysis with context engineering capabilities.
-    Integrates atomic prompting patterns and field dynamics for superior initial discovery.
-    """
+    """Enhanced Phase 1 with context engineering capabilities and robust error handling."""
     
     def __init__(self):
-        """Initialize enhanced Phase 1 with context engineering components."""
-        super().__init__()
-        
-        # Initialize context engineering components
-        self.context_foundations = ContextFoundations()
-        self.field_dynamics = FieldDynamics()
-        self.cognitive_toolkit = CognitiveToolkit()
-        
-        # Track enhancement metrics
-        self.enhancement_metrics = {
-            "atomic_prompt_efficiency": 0.0,
-            "field_coherence": 0.0,
-            "cognitive_depth": 0.0
-        }
-        
-        logger.info("Initialized enhanced Phase 1 with context engineering capabilities")
+        """Initialize with error handling for context engineering components."""
+        try:
+            # Initialize base Phase 1
+            super().__init__()
+            
+            # Validate context engineering dependencies
+            deps_ok, dep_issues = validate_context_engineering_dependencies()
+            if not deps_ok:
+                logger.warning(f"Context engineering dependencies missing: {dep_issues}")
+                self.context_engineering_available = False
+                self.integration_manager = None
+                self.enhancement_enabled = False
+            else:
+                if dep_issues:  # Warnings only
+                    logger.warning(f"Context engineering warnings: {dep_issues}")
+                
+                try:
+                    # Create integration configuration with error handling
+                    self.integration_config = IntegrationConfig(
+                        enable_atomic_prompting=True,
+                        enable_field_dynamics=True,
+                        enable_cognitive_tools=True,
+                        enable_pattern_synthesis=True,
+                        optimization_mode="balanced",
+                        error_tolerance_level="moderate",
+                        enable_fallback=True
+                    )
+                    
+                    # Initialize integration manager with error handling
+                    self.integration_manager = ContextEngineeringIntegrationManager(
+                        self.integration_config
+                    )
+                    
+                    self.context_engineering_available = True
+                    self.enhancement_enabled = True
+                    logger.info("✅ Enhanced Phase 1 initialized with context engineering")
+                    
+                except Exception as e:
+                    logger.error(f"Failed to initialize context engineering: {e}")
+                    self.context_engineering_available = False
+                    self.integration_manager = None
+                    self.enhancement_enabled = False
+                    # Continue with standard Phase 1 only
+            
+            # Performance tracking
+            self.performance_metrics = {
+                "enhancement_attempts": 0,
+                "enhancement_successes": 0,
+                "fallback_uses": 0,
+                "average_enhancement_time": 0.0,
+                "errors": []
+            }
+            
+        except Exception as e:
+            logger.error(f"Critical error in Enhanced Phase 1 initialization: {e}")
+            # Fall back to basic Phase 1
+            super().__init__()
+            self.context_engineering_available = False
+            self.integration_manager = None
+            self.enhancement_enabled = False
     
     async def run(self, tree: List[str], package_info: Dict) -> Dict[str, Any]:
         """
-        Enhanced Phase 1 execution with atomic prompting and field dynamics.
+        Enhanced Phase 1 analysis with comprehensive error handling and fallback.
         
         Args:
-            tree: Project file tree structure
-            package_info: Package dependency information
+            tree: File tree structure
+            package_info: Package information
             
         Returns:
-            Enhanced analysis results with context engineering insights
+            Enhanced analysis results or fallback to original Phase 1
         """
-        logger.info("Starting enhanced Phase 1 analysis with context engineering")
+        start_time = time.time()
+        self.performance_metrics["enhancement_attempts"] += 1
         
-        # Phase 1.1: Initialize neural field for discovery
-        discovery_context = self._create_discovery_context(tree, package_info)
-        discovery_field = self.field_dynamics.initialize_field(
-            field_id="phase1_discovery",
-            field_type=FieldType.DISCOVERY,
-            context=discovery_context
-        )
-        
-        # Phase 1.2: Create atomic prompts for each analysis type
-        atomic_prompts = self._create_atomic_prompts(discovery_context)
-        
-        # Phase 1.3: Apply cognitive understanding to context
-        cognitive_insights = self.cognitive_toolkit.apply_cognitive_operations(discovery_context)
-        
-        # Phase 1.4: Run enhanced standard analysis
-        enhanced_results = await self._run_enhanced_standard_analysis(
-            tree, package_info, atomic_prompts, cognitive_insights
-        )
-        
-        # Phase 1.5: Process results through neural field
-        field_processed_results = self.field_dynamics.process_through_field(
-            field_id="phase1_discovery",
-            input_data=enhanced_results
-        )
-        
-        # Phase 1.6: Synthesize all insights
-        synthesized_results = self._synthesize_enhanced_results(
-            enhanced_results,
-            field_processed_results,
-            cognitive_insights,
-            atomic_prompts
-        )
-        
-        # Update enhancement metrics
-        self._update_enhancement_metrics(synthesized_results)
-        
-        logger.info(f"Enhanced Phase 1 completed with coherence: {self.enhancement_metrics['field_coherence']:.2f}")
-        
-        return synthesized_results
-    
-    def _create_discovery_context(self, tree: List[str], package_info: Dict) -> Dict[str, Any]:
-        """Create optimized discovery context for atomic prompting."""
-        return {
-            "codebase_tree": tree,
-            "dependencies": package_info,
-            "analysis_scope": "initial_discovery",
-            "optimization_target": "comprehensive_understanding",
-            "context_metadata": {
-                "file_count": len(tree),
-                "dependency_count": len(package_info.get("dependencies", {})),
-                "complexity_estimate": self._estimate_complexity(tree, package_info)
-            }
-        }
-    
-    def _create_atomic_prompts(self, discovery_context: Dict[str, Any]) -> Dict[str, str]:
-        """Create atomic prompts for each analysis component."""
-        atomic_prompts = {}
-        
-        # Structure analysis atomic prompt
-        atomic_prompts["structure"] = self.context_foundations.create_atomic_prompt(
-            template_name="discovery",
-            context=f"Project structure: {discovery_context['codebase_tree'][:10]}...",
-            custom_constraints=[
-                "Focus on directory organization patterns",
-                "Identify modular structure indicators",
-                "Limit to top-level architectural insights"
-            ]
-        )
-        
-        # Dependency analysis atomic prompt
-        atomic_prompts["dependencies"] = self.context_foundations.create_atomic_prompt(
-            template_name="analysis",
-            context=f"Dependencies: {discovery_context['dependencies']}",
-            custom_constraints=[
-                "Map critical dependency relationships",
-                "Identify potential version conflicts",
-                "Assess dependency complexity level"
-            ]
-        )
-        
-        # Technology stack atomic prompt
-        atomic_prompts["tech_stack"] = self.context_foundations.create_atomic_prompt(
-            template_name="discovery",
-            context=f"Technology indicators from files and dependencies",
-            custom_constraints=[
-                "Categorize technology stack components",
-                "Identify primary frameworks and libraries",
-                "Assess technology maturity and compatibility"
-            ]
-        )
-        
-        return atomic_prompts
-    
-    async def _run_enhanced_standard_analysis(
-        self,
-        tree: List[str],
-        package_info: Dict,
-        atomic_prompts: Dict[str, str],
-        cognitive_insights: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Run standard analysis enhanced with atomic prompts and cognitive insights."""
-        
-        # Create enhanced context for each architect
-        enhanced_context = {
-            "original_tree": tree,
-            "original_package_info": package_info,
-            "atomic_prompts": atomic_prompts,
-            "cognitive_context": cognitive_insights.get("understanding", {}),
-            "reasoning_insights": cognitive_insights.get("reasoning", {}),
-            "field_guidance": "Focus on pattern emergence and attractor identification"
-        }
-        
-        # Run parallel analysis with enhanced context
-        tasks = []
-        for architect in self.architects:
-            # Enhance architect prompt with atomic structure
-            architect_type = architect.instructions.get("role", "unknown")
-            if architect_type in atomic_prompts:
-                enhanced_prompt = atomic_prompts[architect_type]
+        # Input validation and sanitization
+        try:
+            tree_sanitized, tree_warnings = sanitize_input_data(tree, max_size=100000)
+            package_sanitized, package_warnings = sanitize_input_data(package_info, max_size=50000)
+            
+            if tree_warnings or package_warnings:
+                logger.warning(f"Input sanitization warnings: {tree_warnings + package_warnings}")
                 
-                # Create enhanced architect context
-                architect_context = {
-                    **enhanced_context,
-                    "atomic_prompt": enhanced_prompt,
-                    "cognitive_guidance": cognitive_insights.get("meta_analysis", {}),
-                    "optimization_mode": "atomic_efficiency"
-                }
+        except Exception as e:
+            logger.error(f"Input sanitization failed: {e}")
+            # Use original inputs if sanitization fails
+            tree_sanitized, package_sanitized = tree, package_info
+        
+        # Try enhanced analysis first if available
+        if self.enhancement_enabled and self.context_engineering_available:
+            try:
+                enhanced_results = await self._run_enhanced_analysis(tree_sanitized, package_sanitized)
                 
-                task = architect.analyze(architect_context)
-                tasks.append(task)
-        
-        # Execute enhanced analysis
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Process results with error handling
-        processed_results = {}
-        for i, result in enumerate(results):
-            architect_role = self.architects[i].instructions.get("role", f"architect_{i}")
-            
-            if isinstance(result, Exception):
-                logger.error(f"Enhanced analysis failed for {architect_role}: {result}")
-                processed_results[architect_role] = {"error": str(result), "status": "failed"}
-            else:
-                processed_results[architect_role] = result
+                # Validate enhanced results
+                if self._validate_enhanced_results(enhanced_results):
+                    processing_time = time.time() - start_time
+                    self._update_performance_metrics(True, processing_time)
+                    
+                    # Ensure backward compatibility
+                    return self._ensure_backward_compatibility(enhanced_results)
+                else:
+                    logger.warning("Enhanced results validation failed, falling back to standard analysis")
+                    return await self._fallback_to_standard_analysis(tree_sanitized, package_sanitized, "validation_failed")
+                    
+            except ContextEngineeringError as e:
+                logger.warning(f"Context engineering error: {e}, falling back to standard analysis")
+                return await self._fallback_to_standard_analysis(tree_sanitized, package_sanitized, f"context_engineering_error: {e}")
                 
-                # Measure atomic prompt efficiency
-                if "atomic_prompt" in enhanced_context:
-                    efficiency = self.context_foundations.measure_token_efficiency(
-                        atomic_prompts.get(architect_role, ""),
-                        str(result)
-                    )
-                    processed_results[architect_role]["atomic_efficiency"] = efficiency
-        
-        return processed_results
-    
-    def _synthesize_enhanced_results(
-        self,
-        enhanced_results: Dict[str, Any],
-        field_results: Dict[str, Any],
-        cognitive_insights: Dict[str, Any],
-        atomic_prompts: Dict[str, str]
-    ) -> Dict[str, Any]:
-        """Synthesize all enhancement results into comprehensive analysis."""
-        
-        synthesized_results = {
-            # Core analysis results
-            "standard_analysis": enhanced_results,
-            
-            # Context engineering enhancements
-            "context_engineering": {
-                "atomic_prompting": {
-                    "prompts_used": atomic_prompts,
-                    "efficiency_metrics": self._calculate_atomic_efficiency(enhanced_results),
-                    "optimization_recommendations": self.context_foundations.get_optimization_recommendations()
-                },
-                "field_dynamics": {
-                    "field_state": field_results.get("field_state"),
-                    "activated_attractors": field_results.get("activated_attractors", []),
-                    "emergent_properties": field_results.get("emergent_properties", []),
-                    "field_coherence": self._calculate_field_coherence(field_results)
-                },
-                "cognitive_processing": {
-                    "understanding_insights": cognitive_insights.get("understanding", {}),
-                    "reasoning_patterns": cognitive_insights.get("reasoning", {}),
-                    "cognitive_quality": cognitive_insights.get("meta_analysis", {}),
-                    "synthesis_recommendations": cognitive_insights.get("composition", {}).get("final_recommendations", [])
-                }
-            },
-            
-            # Integrated insights
-            "integrated_insights": self._generate_integrated_insights(
-                enhanced_results, field_results, cognitive_insights
-            ),
-            
-            # Enhancement metrics
-            "enhancement_metrics": self.enhancement_metrics,
-            
-            # Phase progression context
-            "phase_context": {
-                "atomic_context_prepared": True,
-                "field_initialized": True,
-                "cognitive_foundation_established": True,
-                "next_phase_guidance": self._generate_next_phase_guidance(enhanced_results, field_results)
-            }
-        }
-        
-        return synthesized_results
-    
-    def _estimate_complexity(self, tree: List[str], package_info: Dict) -> str:
-        """Estimate project complexity for optimization."""
-        file_count = len(tree)
-        dependency_count = len(package_info.get("dependencies", {}))
-        
-        complexity_score = (file_count / 100) + (dependency_count / 20)
-        
-        if complexity_score < 1.0:
-            return "low"
-        elif complexity_score < 3.0:
-            return "medium"
+            except Exception as e:
+                logger.error(f"Enhanced analysis failed: {e}")
+                logger.error(f"Stack trace: {traceback.format_exc()}")
+                return await self._fallback_to_standard_analysis(tree_sanitized, package_sanitized, f"unknown_error: {e}")
         else:
-            return "high"
+            # Enhancement not available, use standard analysis
+            logger.info("Context engineering not available, using standard Phase 1 analysis")
+            return await self._fallback_to_standard_analysis(tree_sanitized, package_sanitized, "enhancement_disabled")
     
-    def _calculate_atomic_efficiency(self, enhanced_results: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate atomic prompting efficiency metrics."""
-        efficiency_metrics = {}
+    async def _run_enhanced_analysis(self, tree: List[str], package_info: Dict) -> Dict[str, Any]:
+        """Run enhanced analysis with context engineering."""
         
-        for architect_role, result in enhanced_results.items():
-            if isinstance(result, dict) and "atomic_efficiency" in result:
-                efficiency_metrics[architect_role] = result["atomic_efficiency"]
+        # Check if integration manager is healthy
+        if self.integration_manager:
+            health = self.integration_manager.field_dynamics.get_system_health() if hasattr(self.integration_manager, 'field_dynamics') and self.integration_manager.field_dynamics else {"health_status": "unknown"}
+            if health.get("health_status") in ["critical", "unhealthy", "error"]:
+                raise ContextEngineeringError(f"Integration manager unhealthy: {health.get('health_status')}")
         
-        if efficiency_metrics:
-            efficiency_metrics["average"] = sum(efficiency_metrics.values()) / len(efficiency_metrics)
+        # Step 1: Run standard Phase 1 analysis
+        try:
+            standard_results = await super().run(tree, package_info)
+            if "error" in standard_results:
+                raise EnhancedPhase1Error(f"Standard Phase 1 failed: {standard_results['error']}")
+        except Exception as e:
+            raise EnhancedPhase1Error(f"Standard Phase 1 analysis failed: {e}")
         
-        return efficiency_metrics
+        # Step 2: Prepare context for enhancement
+        try:
+            discovery_context = self._prepare_discovery_context(tree, package_info, standard_results)
+        except Exception as e:
+            logger.warning(f"Context preparation failed: {e}, using minimal context")
+            discovery_context = {"tree": tree, "package_info": package_info}
+        
+        # Step 3: Apply context engineering enhancements
+        try:
+            enhanced_results = self.integration_manager.enhance_phase(
+                "phase_1",
+                standard_results,
+                {"discovery_context": discovery_context}
+            )
+            
+            # Check if enhancement actually succeeded
+            if enhanced_results.get("status") in ["error_fallback", "timeout_fallback"]:
+                logger.warning(f"Enhancement failed with status: {enhanced_results.get('status')}")
+                # Return standard results with enhancement failure note
+                return self._create_fallback_enhanced_result(standard_results, enhanced_results.get("error_message", "Enhancement failed"))
+            
+        except Exception as e:
+            logger.error(f"Context engineering enhancement failed: {e}")
+            # Return standard results with error note
+            return self._create_fallback_enhanced_result(standard_results, f"Enhancement error: {e}")
+        
+        # Step 4: Merge results ensuring backward compatibility
+        try:
+            final_results = self._merge_standard_and_enhanced_results(standard_results, enhanced_results)
+        except Exception as e:
+            logger.error(f"Result merging failed: {e}")
+            # Return standard results if merging fails
+            return self._create_fallback_enhanced_result(standard_results, f"Merging error: {e}")
+        
+        return final_results
     
-    def _calculate_field_coherence(self, field_results: Dict[str, Any]) -> float:
-        """Calculate field coherence score."""
-        field_state = field_results.get("field_state")
-        if not field_state:
-            return 0.0
-        
-        # Use field stability as coherence measure
-        coherence = getattr(field_state, 'stability_measure', 0.0)
-        
-        # Boost coherence based on activated attractors
-        activated_attractors = field_results.get("activated_attractors", [])
-        if activated_attractors:
-            attractor_bonus = min(len(activated_attractors) / 5.0, 0.2)
-            coherence += attractor_bonus
-        
-        return min(coherence, 1.0)
-    
-    def _generate_integrated_insights(
-        self,
-        enhanced_results: Dict[str, Any],
-        field_results: Dict[str, Any],
-        cognitive_insights: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        """Generate integrated insights from all enhancement sources."""
-        integrated_insights = []
-        
-        # Insight 1: Structural patterns from field dynamics
-        emergent_properties = field_results.get("emergent_properties", [])
-        if emergent_properties:
-            integrated_insights.append({
-                "type": "structural_emergence",
-                "source": "field_dynamics",
-                "insight": "Emergent structural patterns detected",
-                "details": emergent_properties,
-                "confidence": 0.8
-            })
-        
-        # Insight 2: Cognitive understanding patterns
-        understanding_context = cognitive_insights.get("understanding", {}).get("output_data", {}).get("synthesized_context", {})
-        if understanding_context:
-            integrated_insights.append({
-                "type": "cognitive_understanding",
-                "source": "cognitive_toolkit",
-                "insight": "Deep semantic understanding achieved",
-                "details": understanding_context,
-                "confidence": cognitive_insights.get("understanding", {}).get("confidence_score", 0.0)
-            })
-        
-        # Insight 3: Cross-analysis pattern convergence
-        pattern_convergence = self._identify_pattern_convergence(enhanced_results, field_results, cognitive_insights)
-        if pattern_convergence:
-            integrated_insights.append({
-                "type": "pattern_convergence",
-                "source": "multi_source_synthesis",
-                "insight": "Consistent patterns identified across analysis methods",
-                "details": pattern_convergence,
-                "confidence": 0.9
-            })
-        
-        return integrated_insights
-    
-    def _identify_pattern_convergence(
-        self,
-        enhanced_results: Dict[str, Any],
-        field_results: Dict[str, Any],
-        cognitive_insights: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Identify patterns that converge across different analysis methods."""
-        convergence_patterns = {}
-        
-        # Extract patterns from different sources
-        field_patterns = [prop.get("patterns", []) for prop in field_results.get("emergent_properties", [])]
-        cognitive_patterns = cognitive_insights.get("understanding", {}).get("output_data", {}).get("concepts", [])
-        
-        # Look for common themes
-        common_themes = set()
-        
-        # Flatten field patterns
-        for pattern_list in field_patterns:
-            if isinstance(pattern_list, list):
-                common_themes.update(pattern_list)
-        
-        # Extract cognitive pattern themes
-        for concept in cognitive_patterns:
-            if isinstance(concept, dict):
-                instances = concept.get("instances", [])
-                if isinstance(instances, list):
-                    common_themes.update(instances)
-        
-        if len(common_themes) > 2:
-            convergence_patterns = {
-                "converged_themes": list(common_themes),
-                "convergence_strength": len(common_themes) / 10.0,
-                "analysis_consensus": "High agreement across analysis methods"
+    def _prepare_discovery_context(self, tree: List[str], package_info: Dict, standard_results: Dict) -> Dict[str, Any]:
+        """Prepare context for discovery phase enhancement."""
+        try:
+            context = {
+                "codebase_tree": tree[:1000] if isinstance(tree, list) else str(tree)[:5000],  # Limit size
+                "package_metadata": {
+                    "name": package_info.get("name", "unknown"),
+                    "dependencies": list(package_info.get("dependencies", {}).keys())[:50],  # Limit deps
+                    "structure_type": package_info.get("project_type", "unknown")
+                },
+                "initial_analysis": {
+                    "architect_count": len(standard_results.get("architects", {})),
+                    "analysis_depth": len(str(standard_results)[:1000]),  # Rough measure
+                    "patterns_identified": self._extract_pattern_hints(standard_results)
+                }
             }
-        
-        return convergence_patterns if convergence_patterns else None
+            
+            return context
+        except Exception as e:
+            logger.warning(f"Context preparation failed: {e}")
+            return {"minimal_context": True, "tree_size": len(tree) if tree else 0}
     
-    def _generate_next_phase_guidance(
-        self,
-        enhanced_results: Dict[str, Any],
-        field_results: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Generate guidance for Phase 2 based on Phase 1 enhancements."""
-        guidance = {
-            "molecular_context_seeds": [],
-            "field_state_transfer": field_results.get("field_state"),
-            "optimization_recommendations": [],
-            "complexity_adjustments": []
+    def _extract_pattern_hints(self, standard_results: Dict) -> List[str]:
+        """Extract pattern hints from standard analysis for context engineering."""
+        try:
+            patterns = []
+            
+            # Look for architectural patterns in architect results
+            architects = standard_results.get("architects", {})
+            for architect_name, architect_result in architects.items():
+                if isinstance(architect_result, dict):
+                    analysis_text = str(architect_result.get("analysis", ""))
+                    
+                    # Simple pattern detection
+                    if "mvc" in analysis_text.lower():
+                        patterns.append("mvc_architecture")
+                    if "microservice" in analysis_text.lower():
+                        patterns.append("microservices")
+                    if "component" in analysis_text.lower():
+                        patterns.append("component_based")
+                    if "api" in analysis_text.lower():
+                        patterns.append("api_oriented")
+            
+            # Limit patterns to prevent context explosion
+            return patterns[:10]
+            
+        except Exception as e:
+            logger.warning(f"Pattern extraction failed: {e}")
+            return ["pattern_extraction_failed"]
+    
+    def _merge_standard_and_enhanced_results(self, standard_results: Dict, enhanced_results: Dict) -> Dict[str, Any]:
+        """Merge standard and enhanced results ensuring backward compatibility."""
+        try:
+            # Start with standard results as base
+            merged_results = standard_results.copy()
+            
+            # Add context engineering insights as additional data
+            if "context_engineering" in enhanced_results:
+                merged_results["_context_engineering"] = enhanced_results["context_engineering"]
+            
+            # Add enhancement metadata
+            merged_results["_enhancement_metadata"] = {
+                "enhanced": True,
+                "enhancement_level": enhanced_results.get("enhancement_level", "unknown"),
+                "context_engineering_status": enhanced_results.get("status", "unknown"),
+                "features_active": enhanced_results.get("context_engineering", {}).get("features_active", [])
+            }
+            
+            # Enhance standard results if enhanced data is available
+            if "enhanced_data" in enhanced_results:
+                enhanced_data = enhanced_results["enhanced_data"]
+                
+                # Carefully merge enhanced data without breaking original structure
+                if isinstance(enhanced_data, dict):
+                    for key, value in enhanced_data.items():
+                        if key not in merged_results:  # Only add new keys
+                            merged_results[key] = value
+                        elif key == "architects" and isinstance(value, dict):
+                            # Enhance architect results
+                            merged_results[key] = self._merge_architect_results(
+                                merged_results.get(key, {}), value
+                            )
+            
+            return merged_results
+            
+        except Exception as e:
+            logger.error(f"Result merging failed: {e}")
+            # Return standard results with error info
+            standard_results["_enhancement_error"] = f"Merging failed: {e}"
+            return standard_results
+    
+    def _merge_architect_results(self, original_architects: Dict, enhanced_architects: Dict) -> Dict:
+        """Merge original and enhanced architect results."""
+        try:
+            merged_architects = original_architects.copy()
+            
+            for architect_name, enhanced_result in enhanced_architects.items():
+                if architect_name in merged_architects:
+                    # Add enhanced insights to existing architect
+                    if isinstance(enhanced_result, dict) and isinstance(merged_architects[architect_name], dict):
+                        merged_architects[architect_name]["_enhanced_insights"] = enhanced_result.get("enhanced_analysis", {})
+                else:
+                    # Add new enhanced architect
+                    merged_architects[architect_name] = enhanced_result
+            
+            return merged_architects
+            
+        except Exception as e:
+            logger.warning(f"Architect result merging failed: {e}")
+            return original_architects
+    
+    async def _fallback_to_standard_analysis(self, tree: List[str], package_info: Dict, reason: str) -> Dict[str, Any]:
+        """Fallback to standard Phase 1 analysis with error context."""
+        try:
+            self.performance_metrics["fallback_uses"] += 1
+            logger.info(f"Falling back to standard Phase 1 analysis: {reason}")
+            
+            # Run standard analysis
+            standard_results = await super().run(tree, package_info)
+            
+            # Add fallback metadata
+            standard_results["_enhancement_metadata"] = {
+                "enhanced": False,
+                "fallback_reason": reason,
+                "context_engineering_attempted": True,
+                "fallback_time": time.time()
+            }
+            
+            return standard_results
+            
+        except Exception as e:
+            logger.error(f"Fallback analysis also failed: {e}")
+            # Return minimal error response
+            return {
+                "error": f"Both enhanced and standard analysis failed. Enhanced reason: {reason}, Standard error: {e}",
+                "_enhancement_metadata": {
+                    "enhanced": False,
+                    "total_failure": True,
+                    "fallback_reason": reason,
+                    "final_error": str(e)
+                }
+            }
+    
+    def _create_fallback_enhanced_result(self, standard_results: Dict, error_message: str) -> Dict[str, Any]:
+        """Create a fallback enhanced result when enhancement fails."""
+        fallback_result = standard_results.copy()
+        fallback_result["_enhancement_metadata"] = {
+            "enhanced": False,
+            "enhancement_attempted": True,
+            "enhancement_error": error_message,
+            "fallback_used": True
         }
-        
-        # Extract context seeds for molecular prompting in Phase 2
-        activated_attractors = field_results.get("activated_attractors", [])
-        for attractor in activated_attractors:
-            guidance["molecular_context_seeds"].append({
-                "pattern_id": getattr(attractor, 'pattern_id', 'unknown'),
-                "activation_level": getattr(attractor, 'activation_level', 0.0),
-                "resonance_frequency": getattr(attractor, 'resonance_frequency', 1.0)
-            })
-        
-        # Optimization recommendations based on enhancement metrics
-        if self.enhancement_metrics["atomic_prompt_efficiency"] < 0.7:
-            guidance["optimization_recommendations"].append("Refine atomic prompts for better efficiency")
-        
-        if self.enhancement_metrics["field_coherence"] < 0.6:
-            guidance["optimization_recommendations"].append("Strengthen field coherence in next phase")
-        
-        return guidance
+        return fallback_result
     
-    def _update_enhancement_metrics(self, synthesized_results: Dict[str, Any]):
-        """Update enhancement metrics based on synthesized results."""
-        # Update atomic prompt efficiency
-        atomic_metrics = synthesized_results.get("context_engineering", {}).get("atomic_prompting", {}).get("efficiency_metrics", {})
-        if "average" in atomic_metrics:
-            self.enhancement_metrics["atomic_prompt_efficiency"] = atomic_metrics["average"]
-        
-        # Update field coherence
-        field_coherence = synthesized_results.get("context_engineering", {}).get("field_dynamics", {}).get("field_coherence", 0.0)
-        self.enhancement_metrics["field_coherence"] = field_coherence
-        
-        # Update cognitive depth
-        cognitive_quality = synthesized_results.get("context_engineering", {}).get("cognitive_processing", {}).get("cognitive_quality", {})
-        depth_score = cognitive_quality.get("cognitive_depth", 0.0)
-        self.enhancement_metrics["cognitive_depth"] = depth_score
+    def _validate_enhanced_results(self, enhanced_results: Dict) -> bool:
+        """Validate that enhanced results have expected structure."""
+        try:
+            # Check basic structure
+            if not isinstance(enhanced_results, dict):
+                logger.warning("Enhanced results is not a dictionary")
+                return False
+            
+            # Check for critical errors
+            if enhanced_results.get("status") == "error_fallback":
+                logger.warning("Enhanced results indicate error fallback")
+                return False
+            
+            # Check if results have meaningful content
+            if "enhanced_data" not in enhanced_results and "original_results" not in enhanced_results:
+                logger.warning("Enhanced results missing expected data keys")
+                return False
+            
+            # Validate data size (prevent massive results)
+            result_size = len(str(enhanced_results))
+            if result_size > 10000000:  # 10MB limit
+                logger.warning(f"Enhanced results too large: {result_size} chars")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Result validation failed: {e}")
+            return False
     
-    def get_enhancement_summary(self) -> Dict[str, Any]:
-        """Get summary of context engineering enhancements applied."""
-        return {
-            "enhancement_type": "Context Engineering Integration",
-            "components_used": [
-                "Atomic Prompting (ContextFoundations)",
-                "Neural Field Dynamics (FieldDynamics)",
-                "Cognitive Toolkit (CognitiveToolkit)"
-            ],
-            "enhancement_metrics": self.enhancement_metrics,
-            "optimization_status": {
-                "atomic_efficiency": "excellent" if self.enhancement_metrics["atomic_prompt_efficiency"] > 0.8 else "good" if self.enhancement_metrics["atomic_prompt_efficiency"] > 0.6 else "needs_improvement",
-                "field_coherence": "excellent" if self.enhancement_metrics["field_coherence"] > 0.8 else "good" if self.enhancement_metrics["field_coherence"] > 0.6 else "needs_improvement",
-                "cognitive_depth": "excellent" if self.enhancement_metrics["cognitive_depth"] > 0.8 else "good" if self.enhancement_metrics["cognitive_depth"] > 0.6 else "needs_improvement"
+    def _ensure_backward_compatibility(self, enhanced_results: Dict) -> Dict[str, Any]:
+        """Ensure enhanced results are backward compatible with original Phase 1 format."""
+        try:
+            # If enhanced_data contains original format, use it
+            if "enhanced_data" in enhanced_results:
+                enhanced_data = enhanced_results["enhanced_data"]
+                if isinstance(enhanced_data, dict) and "architects" in enhanced_data:
+                    # This looks like original Phase 1 format, enhance it
+                    enhanced_data["_context_engineering"] = enhanced_results.get("context_engineering", {})
+                    enhanced_data["_enhancement_metadata"] = {
+                        "enhanced": True,
+                        "enhancement_level": enhanced_results.get("enhancement_level", "unknown")
+                    }
+                    return enhanced_data
+            
+            # If original_results is available, use it as base
+            if "original_results" in enhanced_results:
+                base_results = enhanced_results["original_results"].copy()
+                base_results["_context_engineering"] = enhanced_results.get("context_engineering", {})
+                base_results["_enhancement_metadata"] = {
+                    "enhanced": True,
+                    "enhancement_level": enhanced_results.get("enhancement_level", "unknown")
+                }
+                return base_results
+            
+            # Otherwise, try to extract compatible format
+            logger.warning("Enhanced results do not match expected format, attempting extraction")
+            return self._extract_compatible_format(enhanced_results)
+            
+        except Exception as e:
+            logger.error(f"Backward compatibility processing failed: {e}")
+            # Return enhanced results as-is with warning
+            enhanced_results["_compatibility_warning"] = f"Backward compatibility processing failed: {e}"
+            return enhanced_results
+    
+    def _extract_compatible_format(self, enhanced_results: Dict) -> Dict[str, Any]:
+        """Extract compatible format from non-standard enhanced results."""
+        try:
+            # Create minimal compatible structure
+            compatible_results = {
+                "architects": {},
+                "metadata": enhanced_results.get("metadata", {}),
+                "_context_engineering": enhanced_results.get("context_engineering", {}),
+                "_enhancement_metadata": {
+                    "enhanced": True,
+                    "format_extraction": True,
+                    "original_format": "non_standard"
+                },
+                "_original_enhanced_results": enhanced_results  # Preserve original
             }
+            
+            # Try to extract architect-like data
+            if "enhanced_data" in enhanced_results:
+                enhanced_data = enhanced_results["enhanced_data"]
+                if isinstance(enhanced_data, dict):
+                    compatible_results["architects"]["enhanced_architect"] = {
+                        "analysis": enhanced_data,
+                        "source": "context_engineering_extraction"
+                    }
+            
+            return compatible_results
+            
+        except Exception as e:
+            logger.error(f"Compatible format extraction failed: {e}")
+            # Return minimal error structure
+            return {
+                "error": f"Failed to extract compatible format: {e}",
+                "_original_enhanced_results": enhanced_results,
+                "_enhancement_metadata": {
+                    "enhanced": False,
+                    "extraction_failed": True
+                }
+            }
+    
+    def _update_performance_metrics(self, success: bool, processing_time: float):
+        """Update performance tracking metrics."""
+        try:
+            if success:
+                self.performance_metrics["enhancement_successes"] += 1
+                
+                # Update average processing time
+                current_avg = self.performance_metrics["average_enhancement_time"]
+                success_count = self.performance_metrics["enhancement_successes"]
+                self.performance_metrics["average_enhancement_time"] = (
+                    (current_avg * (success_count - 1) + processing_time) / success_count
+                )
+            
+            # Log performance periodically
+            if self.performance_metrics["enhancement_attempts"] % 10 == 0:
+                success_rate = (self.performance_metrics["enhancement_successes"] / 
+                              self.performance_metrics["enhancement_attempts"])
+                logger.info(f"Enhanced Phase 1 performance: {success_rate:.2%} success rate, "
+                          f"{self.performance_metrics['average_enhancement_time']:.2f}s avg time")
+                
+        except Exception as e:
+            logger.warning(f"Performance metrics update failed: {e}")
+    
+    def get_enhancement_status(self) -> Dict[str, Any]:
+        """Get current enhancement status and performance metrics."""
+        return {
+            "context_engineering_available": self.context_engineering_available,
+            "enhancement_enabled": self.enhancement_enabled,
+            "integration_manager_healthy": (
+                self.integration_manager.get_system_health() 
+                if hasattr(self.integration_manager, 'get_system_health') and self.integration_manager 
+                else {"status": "unavailable"}
+            ),
+            "performance_metrics": self.performance_metrics,
+            "configuration": (
+                {
+                    "optimization_mode": self.integration_config.optimization_mode,
+                    "error_tolerance": self.integration_config.error_tolerance_level,
+                    "max_processing_time": self.integration_config.max_processing_time
+                }
+                if hasattr(self, 'integration_config') 
+                else {"status": "not_configured"}
+            )
         }

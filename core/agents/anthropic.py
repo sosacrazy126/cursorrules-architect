@@ -202,13 +202,19 @@ class AnthropicArchitect(BaseArchitect):
                 "agent": agent_name,
                 "findings": text_content
             }
-        except Exception as e:
+        except (ValueError, KeyError) as e:
             agent_name = self.name or "Claude Architect"
-            logger.error(f"[bold red]Error in {agent_name}:[/bold red] {str(e)}")
-            # Return an error message if something goes wrong.
+            logger.error(f"[bold red]Data error in {agent_name}:[/bold red] {str(e)}")
             return {
                 "agent": agent_name,
-                "error": str(e)
+                "error": f"Data processing error: {str(e)}"
+            }
+        except Exception as e:
+            agent_name = self.name or "Claude Architect"
+            logger.error(f"[bold red]Unexpected error in {agent_name}:[/bold red] {str(e)}")
+            return {
+                "agent": agent_name,
+                "error": f"Unexpected error: {str(e)}"
             }
     
     # ====================================================
@@ -266,9 +272,12 @@ class AnthropicArchitect(BaseArchitect):
                     break
             
             return {"plan": text_content}
+        except (ValueError, KeyError) as e:
+            logger.error(f"Data error in analysis plan creation: {str(e)}")
+            return {"error": f"Data processing error: {str(e)}"}
         except Exception as e:
-            logger.error(f"Error in analysis plan creation: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"Unexpected error in analysis plan creation: {str(e)}")
+            return {"error": f"Unexpected error: {str(e)}"}
     
     # ====================================================
     # Synthesize Findings - Not primary function but implemented for compatibility
@@ -325,9 +334,12 @@ class AnthropicArchitect(BaseArchitect):
                     break
             
             return {"analysis": text_content}
+        except (ValueError, KeyError) as e:
+            logger.error(f"Data error in synthesis: {str(e)}")
+            return {"error": f"Data processing error: {str(e)}"}
         except Exception as e:
-            logger.error(f"Error in synthesis: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"Unexpected error in synthesis: {str(e)}")
+            return {"error": f"Unexpected error: {str(e)}"}
     
     # ====================================================
     # Final Analysis - Not primary function but implemented for compatibility
@@ -384,9 +396,12 @@ class AnthropicArchitect(BaseArchitect):
                     break
             
             return {"analysis": text_content}
+        except (ValueError, KeyError) as e:
+            logger.error(f"Data error in final analysis: {str(e)}")
+            return {"error": f"Data processing error: {str(e)}"}
         except Exception as e:
-            logger.error(f"Error in final analysis: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"Unexpected error in final analysis: {str(e)}")
+            return {"error": f"Unexpected error: {str(e)}"}
     
     # ====================================================
     # Consolidate Results - Primary method for Phase 5
@@ -445,8 +460,14 @@ class AnthropicArchitect(BaseArchitect):
                 "phase": "Consolidation",
                 "report": text_content
             }
+        except (ValueError, KeyError) as e:
+            logger.error(f"Data error in consolidation: {str(e)}")
+            return {
+                "phase": "Consolidation",
+                "error": f"Data processing error: {str(e)}"
+            }
         except Exception as e:
-            logger.error(f"Error in consolidation: {str(e)}")
+            logger.error(f"Unexpected error in consolidation: {str(e)}")
             return {
                 "phase": "Consolidation",
                 "error": str(e)

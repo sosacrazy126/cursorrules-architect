@@ -1,0 +1,374 @@
+# Neural Field Configuration for CursorRules Architect
+# Based on Context Engineering paradigm from:
+# https://github.com/dosco/llm-context-engineering
+
+# Field Parameters
+field:
+  # How quickly patterns decay in the field (0.0-1.0)
+  # Lower values = longer persistence - optimized for project analysis
+  decay_rate: 0.03
+  
+  # How easily new information enters the field (0.0-1.0)
+  # Higher values = more permeable boundaries
+  boundary_permeability: 0.85
+  
+  # How broadly patterns resonate with each other (0.0-1.0)
+  # Higher values = wider resonance - good for connecting related concepts
+  resonance_bandwidth: 0.7
+  
+  # Threshold for attractor formation (0.0-1.0)
+  # Lower values = more attractors form - useful for project patterns
+  attractor_formation_threshold: 0.6
+  
+  # Maximum field size (approximate token count)
+  max_capacity: 12000
+  
+  # Reserved tokens for response generation
+  reserved_tokens: 3000
+
+# Initial Attractors - Core patterns for CursorRules analysis
+attractors:
+  # Project analysis system attractor
+  - pattern: |
+      Analyze software projects systematically through multiple phases:
+      Phase 1: Project structure and architecture analysis
+      Phase 2: Collaborative planning and technical requirements 
+      Phase 3: Code quality and patterns assessment
+      Phase 4: Testing and validation strategies
+      Phase 5: Documentation and knowledge transfer
+      Phase 6: Deployment and operational considerations
+    strength: 0.95
+    basin_width: 0.9
+  
+  # Technology stack analysis attractor
+  - pattern: |
+      Identify and analyze technology patterns:
+      - Frontend frameworks (React, Vue, Angular, etc.)
+      - Backend technologies (Node.js, Python, Go, etc.)
+      - Database systems and data patterns
+      - Infrastructure and deployment patterns
+      - Development tools and workflows
+    strength: 0.85
+    basin_width: 0.8
+    
+  # Code quality and best practices attractor
+  - pattern: |
+      Evaluate code quality through multiple dimensions:
+      - Architecture patterns and design principles
+      - Code organization and structure
+      - Testing strategies and coverage
+      - Performance optimization opportunities
+      - Security best practices
+      - Maintainability and technical debt
+    strength: 0.8
+    basin_width: 0.75
+    
+  # AI tool integration patterns attractor
+  - pattern: |
+      Generate optimized configurations for AI coding assistants:
+      - Cursor IDE rules and preferences
+      - GitHub Copilot optimization
+      - Claude.md context engineering
+      - Windsurf workflow integration
+      - Tool-specific best practices
+    strength: 0.9
+    basin_width: 0.85
+
+# Resonance Configuration
+resonance:
+  # Method for calculating resonance between patterns
+  method: "cosine"
+  
+  # Minimum threshold for resonance effects
+  threshold: 0.25
+  
+  # Amplification factor for resonance effects
+  amplification: 1.3
+  
+  # Allow circular resonance (patterns resonating through intermediaries)
+  allow_circular: true
+  
+  # Resonance decay with semantic distance
+  distance_factor: 0.4
+
+# Persistence Mechanisms
+persistence:
+  # Attractor protection factor (resistance to decay)
+  attractor_protection: 0.85
+  
+  # Strategy for handling field capacity limits
+  overflow_strategy: "prune_weakest"
+  
+  # Strengthen patterns when accessed/retrieved
+  strengthen_on_access: true
+  
+  # Access strength boost
+  access_boost: 0.2
+  
+  # Periodic consolidation of similar patterns
+  periodic_consolidation: true
+  
+  # Minimum similarity for consolidation
+  consolidation_threshold: 0.8
+
+# Field Operations
+operations:
+  # Injection: adding new information to the field
+  injection:
+    default_strength: 1.0
+    blend_similar: true
+    blend_threshold: 0.75
+    blend_ratio: 0.25
+  
+  # Attenuation: reducing pattern strength
+  attenuation:
+    default_factor: 0.4
+    affect_resonant: false
+  
+  # Amplification: increasing pattern strength
+  amplification:
+    default_factor: 0.3
+    max_strength: 1.2
+    affect_resonant: true
+  
+  # Field collapse: resolving field to coherent state
+  collapse:
+    method: "coherence_maximizing"
+    preserve_attractors: true
+    coherence_threshold: 0.75
+
+# Symbolic Residue Tracking
+symbolic_residue:
+  # Enable explicit symbolic residue tracking
+  enabled: true
+  
+  # Minimum strength threshold for tracking residue
+  min_strength: 0.2
+  
+  # Surface residue in field representation
+  surface_in_representation: true
+  
+  # Maximum residues to track
+  max_tracked: 30
+  
+  # States to track
+  tracked_states: ["surfaced", "integrated", "echo"]
+
+# Measurement and Metrics
+metrics:
+  # Field stability measurement
+  stability:
+    attractor_weight: 0.7
+    organization_weight: 0.3
+  
+  # Field coherence measurement
+  coherence:
+    method: "attractor_alignment"
+    sampling: "strength_weighted"
+    sample_size: 50
+  
+  # Field resonance measurement
+  resonance:
+    method: "weighted"
+    strength_weight: 0.8
+
+# Output Configuration
+output:
+  # Include field state in model context
+  include_field_state: true
+  
+  # Maximum attractors to include in representation
+  max_attractors: 6
+  
+  # Maximum active patterns to include
+  max_patterns: 8
+  
+  # Include field metrics in representation
+  include_metrics: true
+  
+  # Include symbolic residue in representation
+  include_residue: true
+  
+  # Maximum residues to include
+  max_residues: 5
+  
+  # Format for field representation
+  format: "markdown"
+
+# Integration Options
+integration:
+  # Enable API exposure of field operations
+  api_enabled: false
+  
+  # Enable field change logging
+  logging_enabled: true
+  
+  # Log level
+  log_level: "info"
+  
+  # Save field state between sessions
+  persistence_between_sessions: true
+  
+  # Storage format for persistent field state
+  storage_format: "json"
+  
+  # Path for persistent storage
+  storage_path: "./field_state"
+  
+  # Compress stored field state
+  compress_storage: true
+
+# Recursive Field Extensions
+recursive:
+  # Enable recursive field self-improvement
+  enabled: true
+  
+  # Maximum recursion depth
+  max_depth: 3
+  
+  # Minimum improvement threshold to continue recursion
+  improvement_threshold: 0.15
+  
+  # Strategy for recursive improvement
+  strategy: "attractor_tuning"
+  
+  # Enable audit log of recursive improvements
+  audit_enabled: true
+  
+  # Focus areas for recursive improvement
+  focus_areas: ["coherence", "resonance", "stability"]
+  
+  # Self-prompt template for recursive improvement
+  self_prompt_template: |
+    Analyze the current project analysis field state:
+    {field_state}
+    
+    Current analysis metrics:
+    {evaluation_results}
+    
+    Enhance the analysis by:
+    1. Strengthening resonance between related project patterns
+    2. Integrating discovered insights with existing knowledge
+    3. Improving coherence of technical recommendations
+    4. Expanding pattern recognition for better rule generation
+    
+    Generate improved analysis that maintains accuracy while
+    addressing identified areas for enhancement.
+
+# Protocol Integration
+protocols:
+  # Enable protocol shell integration
+  enabled: true
+  
+  # Default protocol shell template for project analysis
+  default_template: |
+    /project.analysis.process{
+        intent="Analyze project using neural field dynamics for enhanced insight generation",
+        input={
+            project_data=<project_structure>,
+            analysis_phase=<current_phase>,
+            previous_insights=<field_state>
+        },
+        process=[
+            /field.measure{coherence, stability, resonance},
+            /attractor.identify{min_strength=0.6},
+            /pattern.detect{method="project_analysis", threshold=0.4},
+            /resonance.scaffold{target="discovered_patterns"},
+            /residue.surface{mode="integration", integrate=true},
+            /response.generate{style="comprehensive_technical_analysis"}
+        ],
+        output={
+            enhanced_analysis=<analysis_result>,
+            field_updates=<pattern_updates>,
+            recommendations=<technical_recommendations>,
+            next_phase_preparation=<field_state_for_next>
+        }
+    }
+  
+  # Embed protocol in context for model
+  embed_protocol: true
+  
+  # Protocol execution strategy
+  execution_strategy: "model_guided"
+  
+  # Validate protocol outputs
+  validate_outputs: true
+
+# Advanced Field Dynamics
+advanced:
+  # Multi-field orchestration for specialized analysis
+  multi_field:
+    enabled: true
+    
+    # Specialized fields for different aspects
+    fields:
+      - name: "architecture_field"
+        decay_rate: 0.02
+        focus: "system architecture and design patterns"
+      - name: "technology_field"
+        decay_rate: 0.04
+        focus: "technology stack and framework analysis"
+      - name: "quality_field"
+        decay_rate: 0.05
+        focus: "code quality and best practices"
+    
+    # Field interaction strategy
+    interaction: "orchestrated"
+  
+  # Criticality tuning (operating at edge of chaos for innovation)
+  criticality:
+    enabled: true
+    target: 0.75
+    auto_adjust: true
+    adjust_rate: 0.03
+  
+  # Emergent property tracking
+  emergence:
+    enabled: true
+    
+    properties:
+      - name: "pattern_recognition"
+        detection: "cross_phase_pattern_emergence"
+      - name: "technical_insight_synthesis"
+        detection: "knowledge_integration_patterns"
+      - name: "recommendation_coherence"
+        detection: "solution_pattern_formation"
+    
+    # Amplify emergent properties
+    amplify: true
+    amplification: 1.15
+
+# Development and Debugging
+development:
+  # Visualization for neural field state
+  visualization:
+    enabled: true
+    format: "ascii"
+    elements:
+      - "attractors"
+      - "active_patterns"
+      - "resonance_links"
+      - "field_metrics"
+  
+  # Instrumentation for field monitoring
+  instrumentation:
+    enabled: true
+    metrics:
+      - "stability_over_time"
+      - "pattern_evolution"
+      - "attractor_dynamics"
+      - "analysis_quality_correlation"
+    sampling_interval: 1
+  
+  # Testing scenarios
+  testing:
+    enabled: true
+    scenarios:
+      - name: "multi_phase_stability"
+        description: "Test field stability across analysis phases"
+      - name: "pattern_resonance_accuracy"
+        description: "Validate pattern recognition and resonance"
+      - name: "knowledge_persistence"
+        description: "Test information persistence across sessions"
+    
+    auto_regression: true

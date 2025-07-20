@@ -35,6 +35,15 @@ from core.utils.tools.clean_cursorrules import clean_cursorrules
 from core.utils.tools.model_config_helper import get_model_config_name
 from core.utils.tools.tree_generator import get_project_tree
 
+# Context Engineering Integration Imports
+from core.memory.analysis_memory_integration import AnalysisMemoryIntegration
+from core.context.analysis_context_integration import AnalysisContextIntegration
+from core.protocol.phase2_protocol_integration import Phase2ProtocolIntegration
+
+# Neural Field Context Engineering Imports
+from core.context_engineering.neural_field_manager import NeuralFieldManager
+from core.context_engineering.protocol_shell_engine import ProtocolShellEngine, ProtocolParser
+
 console = Console()
 
 class HTTPRequestFilter(logging.Filter):
@@ -104,10 +113,10 @@ def initialize_clients(logger):
 
 
 class ProjectAnalyzer:
-    """Orchestrates the complete project analysis workflow."""
+    """Orchestrates the complete project analysis workflow with Context Engineering integration."""
     
     def __init__(self, directory: Path):
-        """Initialize the ProjectAnalyzer with the specified directory.
+        """Initialize the ProjectAnalyzer with the specified directory and Context Engineering systems.
         
         Args:
             directory: Path to the project directory to analyze
@@ -129,6 +138,55 @@ class ProjectAnalyzer:
             'phase5': Phase5Analysis(),
             'final': FinalAnalysis()
         }
+        
+        # Initialize Context Engineering Integration Systems
+        try:
+            # Memory Integration for knowledge persistence across phases
+            memory_db_path = self.directory / "analysis_memory.db"
+            self._memory_integration = AnalysisMemoryIntegration(str(memory_db_path))
+            console.print("[dim]✓ Memory Integration initialized[/dim]")
+            
+            # Context Field Integration for dynamic field dynamics
+            context_storage_path = self.directory / "analysis_context_field.json"
+            self._context_integration = AnalysisContextIntegration(str(context_storage_path))
+            console.print("[dim]✓ Context Field Integration initialized[/dim]")
+            
+            # Protocol Integration for collaborative Phase 2 planning
+            protocol_storage_path = self.directory / "phase2_protocols.json"
+            self._protocol_integration = Phase2ProtocolIntegration(str(protocol_storage_path))
+            console.print("[dim]✓ Protocol Integration initialized[/dim]")
+            
+            # Neural Field Manager for continuous semantic field context engineering
+            neural_field_config_path = Path(__file__).parent / "core" / "context_engineering" / "neural_field_config.yaml"
+            self._neural_field_manager = NeuralFieldManager(str(neural_field_config_path))
+            console.print("[dim]✓ Neural Field Manager initialized[/dim]")
+            
+            # Protocol Shell Engine for Pareto-lang execution
+            self._protocol_shell_engine = ProtocolShellEngine(self._neural_field_manager.primary_field)
+            console.print("[dim]✓ Protocol Shell Engine initialized[/dim]")
+            
+            # Start analysis sessions
+            self._project_id = self._memory_integration.start_analysis_session(
+                str(self.directory), self.directory.name
+            )
+            self._field_session_id = self._context_integration.start_field_analysis({
+                "project_path": str(self.directory),
+                "project_name": self.directory.name
+            })
+            
+            self._context_engineering_enabled = True
+            console.print("[bold green]🧠 Context Engineering systems activated[/bold green]")
+            console.print("[bold cyan]🌊 Neural Field dynamics engaged[/bold cyan]")
+            
+        except Exception as e:
+            console.print(f"[yellow]Warning: Context Engineering initialization failed: {e}[/yellow]")
+            console.print("[yellow]Continuing with standard analysis pipeline...[/yellow]")
+            self._context_engineering_enabled = False
+            self._memory_integration = None
+            self._context_integration = None
+            self._protocol_integration = None
+            self._neural_field_manager = None
+            self._protocol_shell_engine = None
     
     @property
     def phase1_results(self):
@@ -179,28 +237,265 @@ class ProjectAnalyzer:
         self._results['final_analysis'] = value
 
     async def run_phase1(self, tree: List[str], package_info: Dict) -> Dict:
-        """Run Initial Discovery Phase."""
-        return await self._analyzers['phase1'].run(tree, package_info)
+        """Run Initial Discovery Phase with Context Engineering integration."""
+        
+        # Retrieve relevant previous analysis from memory if available
+        if self._context_engineering_enabled and self._memory_integration:
+            try:
+                # Extract technologies from package_info or tree structure for context
+                technologies = list(package_info.keys()) if package_info else ["general"]
+                similar_projects = self._memory_integration.get_similar_projects(technologies)
+                if similar_projects:
+                    console.print(f"[dim]🧠 Found {len(similar_projects)} similar project insights[/dim]")
+            except Exception as e:
+                console.print(f"[dim]Warning: Could not retrieve similar projects: {e}[/dim]")
+        
+        # Run the standard Phase 1 analysis
+        results = await self._analyzers['phase1'].run(tree, package_info)
+        
+        # Enhance with Context Engineering if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store results in memory for future sessions
+                if self._memory_integration:
+                    phase_node_id = self._memory_integration.store_phase_analysis("phase1", results, 1)
+                    console.print(f"[dim]🧠 Phase 1 analysis stored (node: {phase_node_id[:8]}...)[/dim]")
+                
+                # Initialize context field with project structure
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("phase1", results, 1)
+                    results.update(field_enhanced_results)
+                    console.print("[dim]🌊 Phase 1 enhanced with context field dynamics[/dim]")
+                
+                # Process through neural field for continuous semantic understanding
+                if self._neural_field_manager:
+                    # Inject project analysis into neural field
+                    project_context = f"Project Analysis Phase 1: {results.get('summary', '')}"
+                    field_processing_result = self._neural_field_manager.process_context(
+                        project_context, 
+                        query="software project analysis patterns"
+                    )
+                    
+                    # Store neural field insights
+                    results['neural_field_insights'] = {
+                        'field_metrics': field_processing_result['field_metrics'],
+                        'resonance_patterns': field_processing_result['resonance_scores'],
+                        'recommendations': field_processing_result['recommendations']
+                    }
+                    console.print("[dim]🌊 Neural field processing completed for Phase 1[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering enhancement failed in Phase 1: {e}[/yellow]")
+        
+        return results
 
     async def run_phase2(self, phase1_results: Dict, tree: List[str]) -> Dict:
-        """Run Methodical Planning Phase."""
-        return await self._analyzers['phase2'].run(phase1_results, tree)
+        """Run Methodical Planning Phase with Protocol Engineering integration."""
+        
+        # Retrieve memory context for enhanced planning
+        if self._context_engineering_enabled and self._memory_integration:
+            try:
+                # Get phase patterns for similar projects
+                technologies = ["general"]  # Extract from phase1_results if available
+                phase_patterns = self._memory_integration.get_phase_patterns("phase2", technologies)
+                if phase_patterns:
+                    console.print(f"[dim]🧠 Enhanced planning with phase patterns[/dim]")
+            except Exception as e:
+                console.print(f"[dim]Warning: Could not retrieve phase patterns: {e}[/dim]")
+        
+        # Create collaborative protocol if enabled
+        protocol_name = None
+        if self._context_engineering_enabled and self._protocol_integration:
+            try:
+                # Create analysis protocol for Phase 2
+                project_context = {
+                    "project_path": str(self.directory),
+                    "project_name": self.directory.name,
+                    "phase1_results": phase1_results,
+                    "project_complexity": len(tree)
+                }
+                stakeholders = [{"role": "analyzer", "priority": "high"}]  # Default stakeholder
+                protocol_name = self._protocol_integration.create_analysis_protocol(project_context, stakeholders)
+                console.print(f"[dim]🤝 Created collaborative protocol: {protocol_name[:8]}...[/dim]")
+                
+            except Exception as e:
+                console.print(f"[yellow]Warning: Protocol creation failed: {e}[/yellow]")
+        
+        # Run standard Phase 2 analysis
+        results = await self._analyzers['phase2'].run(phase1_results, tree)
+        
+        # Store Phase 2 results and enhance with context field if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store in memory
+                if self._memory_integration:
+                    phase_node_id = self._memory_integration.store_phase_analysis("phase2", results, 2)
+                    console.print(f"[dim]🧠 Phase 2 analysis stored (node: {phase_node_id[:8]}...)[/dim]")
+                
+                # Enhance with context field dynamics
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("phase2", results, 2)
+                    results.update(field_enhanced_results)
+                    console.print("[dim]🌊 Phase 2 enhanced with field resonance patterns[/dim]")
+                
+                # Execute protocol shell for planning enhancement
+                if self._protocol_shell_engine:
+                    # Use the neural field processing protocol for Phase 2
+                    protocol_input = {
+                        "project_data": phase1_results,
+                        "analysis_phase": "phase2",
+                        "previous_insights": self._neural_field_manager.primary_field.get_field_representation('json')
+                    }
+                    
+                    protocol_result = self._protocol_shell_engine.execute_protocol(
+                        "neural.field.process", protocol_input
+                    )
+                    
+                    results['protocol_enhancement'] = protocol_result
+                    console.print("[dim]🌊 Protocol shell execution completed for Phase 2[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering enhancement failed in Phase 2: {e}[/yellow]")
+        
+        return results
 
     async def run_phase3(self, analysis_plan: Dict, tree: List[str]) -> Dict:
-        """Run Deep Analysis Phase."""
-        return await self._analyzers['phase3'].run(analysis_plan, tree, self.directory)
+        """Run Deep Analysis Phase with Context Engineering enhancement."""
+        
+        # Run standard Phase 3 analysis
+        results = await self._analyzers['phase3'].run(analysis_plan, tree, self.directory)
+        
+        # Enhance with Context Engineering if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store analysis results
+                if self._memory_integration:
+                    phase_node_id = self._memory_integration.store_phase_analysis("phase3", results, 3)
+                    console.print(f"[dim]🧠 Phase 3 analysis stored (node: {phase_node_id[:8]}...)[/dim]")
+                
+                # Enhance with context field evolution
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("phase3", results, 3)
+                    results.update(field_enhanced_results)
+                    console.print("[dim]🌊 Phase 3 enhanced with field pattern evolution[/dim]")
+                
+                # Apply resonance scaffolding for coherence enhancement
+                if self._protocol_shell_engine:
+                    # Execute field resonance scaffold protocol
+                    scaffold_input = {
+                        "field_state": self._neural_field_manager.primary_field.get_field_representation('json'),
+                        "target_patterns": [results.get('summary', ''), analysis_plan.get('focus_areas', '')],
+                        "coherence_targets": {"phase3_analysis": 0.8}
+                    }
+                    
+                    scaffold_result = self._protocol_shell_engine.execute_protocol(
+                        "field.resonance.scaffold", scaffold_input
+                    )
+                    
+                    results['resonance_scaffolding'] = scaffold_result
+                    console.print("[dim]🌊 Resonance scaffolding applied for Phase 3 coherence[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering enhancement failed in Phase 3: {e}[/yellow]")
+        
+        return results
 
     async def run_phase4(self, phase3_results: Dict) -> Dict:
-        """Run Synthesis Phase."""
-        return await self._analyzers['phase4'].run(phase3_results)
+        """Run Synthesis Phase with Context Engineering integration."""
+        
+        # Run standard Phase 4 analysis
+        results = await self._analyzers['phase4'].run(phase3_results)
+        
+        # Enhance with Context Engineering if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store synthesis results
+                if self._memory_integration:
+                    phase_node_id = self._memory_integration.store_phase_analysis("phase4", results, 4)
+                    console.print(f"[dim]🧠 Phase 4 analysis stored (node: {phase_node_id[:8]}...)[/dim]")
+                
+                # Enhance with context field synthesis
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("phase4", results, 4)
+                    results.update(field_enhanced_results)
+                    console.print("[dim]🌊 Phase 4 enhanced with field convergence patterns[/dim]")
+                
+                # Apply attractor co-emergence for synthesis
+                if self._protocol_shell_engine:
+                    # Execute attractor co-emergence protocol for pattern synthesis
+                    co_emerge_input = {
+                        "current_field_state": self._neural_field_manager.primary_field.get_field_representation('json'),
+                        "candidate_attractors": list(self._neural_field_manager.primary_field.attractors.keys())
+                    }
+                    
+                    co_emerge_result = self._protocol_shell_engine.execute_protocol(
+                        "attractor.co.emerge", co_emerge_input
+                    )
+                    
+                    results['attractor_co_emergence'] = co_emerge_result
+                    console.print("[dim]🌊 Attractor co-emergence applied for Phase 4 synthesis[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering enhancement failed in Phase 4: {e}[/yellow]")
+        
+        return results
 
     async def run_phase5(self, all_results: Dict) -> Dict:
-        """Run Consolidation Phase."""
-        return await self._analyzers['phase5'].run(all_results)
+        """Run Consolidation Phase with Context Engineering integration."""
+        
+        # Run standard Phase 5 analysis
+        results = await self._analyzers['phase5'].run(all_results)
+        
+        # Enhance with Context Engineering if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store consolidation results
+                if self._memory_integration:
+                    phase_node_id = self._memory_integration.store_phase_analysis("phase5", results, 5)
+                    console.print(f"[dim]🧠 Phase 5 analysis stored (node: {phase_node_id[:8]}...)[/dim]")
+                
+                # Enhance with context field consolidation
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("phase5", results, 5)
+                    results.update(field_enhanced_results)
+                    console.print("[dim]🌊 Phase 5 enhanced with complete field dynamics[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering enhancement failed in Phase 5: {e}[/yellow]")
+        
+        return results
 
     async def run_final_analysis(self, consolidated_report: Dict, tree: List[str] = None) -> Dict:
-        """Run Final Analysis Phase."""
-        return await self._analyzers['final'].run(consolidated_report, tree)
+        """Run Final Analysis Phase with Context Engineering culmination."""
+        
+        # Run standard Final Analysis
+        results = await self._analyzers['final'].run(consolidated_report, tree)
+        
+        # Create Context Engineering culmination if enabled
+        if self._context_engineering_enabled:
+            try:
+                # Store final analysis results
+                if self._memory_integration:
+                    final_node_id = self._memory_integration.store_final_analysis(results)
+                    console.print(f"[dim]🧠 Final analysis stored (node: {final_node_id[:8]}...)[/dim]")
+                    
+                    # End analysis session
+                    session_summary = self._memory_integration.end_analysis_session()
+                    console.print("[dim]🧠 Analysis session completed - memory summary created[/dim]")
+                
+                # Create final context field state
+                if self._context_integration:
+                    field_enhanced_results = self._context_integration.enhance_phase_with_field("final", results, 6)
+                    results.update(field_enhanced_results)
+                    
+                    # End field analysis
+                    field_summary = self._context_integration.end_field_analysis()
+                    console.print("[dim]🌊 Context field analysis completed - understanding crystallized[/dim]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]Warning: Context Engineering culmination failed in Final Analysis: {e}[/yellow]")
+        
+        return results
 
     async def analyze(self) -> str:
         """Run complete analysis workflow"""

@@ -1,0 +1,181 @@
+{
+  "metadata": {
+    "phase": "phase3",
+    "generated_at": "2025-07-19T06:51:46.543754",
+    "version": "1.0",
+    "generator": "BlueprintGenerator",
+    "mode": "plan_mode"
+  },
+  "context": {
+    "project_info": {
+      "name": "cursorrules-architect",
+      "type": "python_project",
+      "framework": "asyncio"
+    },
+    "environment": {
+      "python_version": "3.8+",
+      "requirements": [
+        "anthropic",
+        "openai",
+        "rich",
+        "pydantic"
+      ]
+    },
+    "dependencies": {
+      "runtime": [
+        "asyncio",
+        "json",
+        "pathlib"
+      ],
+      "dev": [
+        "pytest",
+        "black",
+        "mypy"
+      ]
+    },
+    "existing_analysis": {}
+  },
+  "tasks": [
+    {
+      "id": "T3.1",
+      "name": "Component Deep Dive",
+      "description": "Perform deep analysis of identified components",
+      "priority": "high",
+      "dependencies": [
+        "phase2"
+      ],
+      "expected_output": "Detailed component analysis reports"
+    },
+    {
+      "id": "T3.2",
+      "name": "Pattern Recognition",
+      "description": "Identify architectural patterns and anti-patterns",
+      "priority": "medium",
+      "dependencies": [
+        "T3.1"
+      ],
+      "expected_output": "Pattern catalog with recommendations"
+    }
+  ],
+  "agents": [
+    {
+      "id": "A3.1",
+      "name": "Analysis Agent",
+      "role": "Deep component analyzer",
+      "capabilities": [
+        "Code quality assessment",
+        "Performance analysis",
+        "Security audit"
+      ],
+      "assigned_tasks": [
+        "T3.1",
+        "T3.2"
+      ]
+    }
+  ],
+  "evaluation_criteria": {
+    "task_criteria": [
+      {
+        "criterion": "Completeness",
+        "description": "All required outputs are generated",
+        "weight": 0.3,
+        "measurement": "Percentage of completed deliverables"
+      },
+      {
+        "criterion": "Quality",
+        "description": "Outputs meet quality standards",
+        "weight": 0.3,
+        "measurement": "Quality score based on defined metrics"
+      },
+      {
+        "criterion": "Timeliness",
+        "description": "Tasks completed within allocated time",
+        "weight": 0.2,
+        "measurement": "Time taken vs. estimated time"
+      },
+      {
+        "criterion": "Accuracy",
+        "description": "Information is correct and verified",
+        "weight": 0.2,
+        "measurement": "Error rate and validation results"
+      }
+    ],
+    "phase_criteria": [
+      {
+        "criterion": "Goal Achievement",
+        "description": "Phase objectives are met",
+        "measurement": "Objective completion percentage"
+      },
+      {
+        "criterion": "Integration Success",
+        "description": "Outputs integrate well with other phases",
+        "measurement": "Integration test results"
+      }
+    ]
+  },
+  "execution_plan": {
+    "sequence": [
+      "T3.1",
+      "T3.2"
+    ],
+    "parallelization": {
+      "parallel_groups": [],
+      "sequential": [
+        "T3.1",
+        "T3.2"
+      ]
+    },
+    "checkpoints": [
+      {
+        "id": "CP_phase3_1",
+        "after_task": "T3.1",
+        "validation": "Initial task completion check",
+        "action_on_failure": "retry_with_adjusted_parameters"
+      },
+      {
+        "id": "CP_phase3_final",
+        "after_task": "phase_completion",
+        "validation": "Full phase validation",
+        "action_on_failure": "escalate_to_supervisor"
+      }
+    ],
+    "rollback_strategy": {
+      "trigger_conditions": [
+        "critical_failure",
+        "validation_failure"
+      ],
+      "rollback_points": [
+        {
+          "id": "CP_phase3_1",
+          "after_task": "T3.1",
+          "validation": "Initial task completion check",
+          "action_on_failure": "retry_with_adjusted_parameters"
+        },
+        {
+          "id": "CP_phase3_final",
+          "after_task": "phase_completion",
+          "validation": "Full phase validation",
+          "action_on_failure": "escalate_to_supervisor"
+        }
+      ],
+      "recovery_actions": [
+        "restore_previous_state",
+        "adjust_parameters",
+        "retry_with_fallback"
+      ]
+    }
+  },
+  "constraints": {
+    "time_limit": "2 hours",
+    "resource_limits": {
+      "max_agents": 5,
+      "max_parallel_tasks": 3,
+      "memory_limit": "4GB"
+    },
+    "quality_thresholds": {
+      "min_accuracy": 0.85,
+      "min_completeness": 0.9
+    },
+    "priority_focus": "accuracy"
+  }
+}

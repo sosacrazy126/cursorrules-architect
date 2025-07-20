@@ -1,0 +1,124 @@
+agents:
+- assigned_tasks:
+  - T3.1
+  - T3.2
+  capabilities:
+  - Code quality assessment
+  - Performance analysis
+  - Security audit
+  id: A3.1
+  name: Analysis Agent
+  role: Deep component analyzer
+constraints:
+  priority_focus: accuracy
+  quality_thresholds:
+    min_accuracy: 0.85
+    min_completeness: 0.9
+  resource_limits:
+    max_agents: 5
+    max_parallel_tasks: 3
+    memory_limit: 4GB
+  time_limit: 2 hours
+context:
+  dependencies:
+    dev:
+    - pytest
+    - black
+    - mypy
+    runtime:
+    - asyncio
+    - json
+    - pathlib
+  environment:
+    python_version: 3.8+
+    requirements:
+    - anthropic
+    - openai
+    - rich
+    - pydantic
+  existing_analysis: {}
+  project_info:
+    framework: asyncio
+    name: cursorrules-architect
+    type: python_project
+evaluation_criteria:
+  phase_criteria:
+  - criterion: Goal Achievement
+    description: Phase objectives are met
+    measurement: Objective completion percentage
+  - criterion: Integration Success
+    description: Outputs integrate well with other phases
+    measurement: Integration test results
+  task_criteria:
+  - criterion: Completeness
+    description: All required outputs are generated
+    measurement: Percentage of completed deliverables
+    weight: 0.3
+  - criterion: Quality
+    description: Outputs meet quality standards
+    measurement: Quality score based on defined metrics
+    weight: 0.3
+  - criterion: Timeliness
+    description: Tasks completed within allocated time
+    measurement: Time taken vs. estimated time
+    weight: 0.2
+  - criterion: Accuracy
+    description: Information is correct and verified
+    measurement: Error rate and validation results
+    weight: 0.2
+execution_plan:
+  checkpoints:
+  - action_on_failure: retry_with_adjusted_parameters
+    after_task: T3.1
+    id: CP_phase3_1
+    validation: Initial task completion check
+  - action_on_failure: escalate_to_supervisor
+    after_task: phase_completion
+    id: CP_phase3_final
+    validation: Full phase validation
+  parallelization:
+    parallel_groups: []
+    sequential:
+    - T3.1
+    - T3.2
+  rollback_strategy:
+    recovery_actions:
+    - restore_previous_state
+    - adjust_parameters
+    - retry_with_fallback
+    rollback_points:
+    - action_on_failure: retry_with_adjusted_parameters
+      after_task: T3.1
+      id: CP_phase3_1
+      validation: Initial task completion check
+    - action_on_failure: escalate_to_supervisor
+      after_task: phase_completion
+      id: CP_phase3_final
+      validation: Full phase validation
+    trigger_conditions:
+    - critical_failure
+    - validation_failure
+  sequence:
+  - T3.1
+  - T3.2
+metadata:
+  generated_at: '2025-07-19T06:51:46.543754'
+  generator: BlueprintGenerator
+  mode: plan_mode
+  phase: phase3
+  version: '1.0'
+tasks:
+- dependencies:
+  - phase2
+  description: Perform deep analysis of identified components
+  expected_output: Detailed component analysis reports
+  id: T3.1
+  name: Component Deep Dive
+  priority: high
+- dependencies:
+  - T3.1
+  description: Identify architectural patterns and anti-patterns
+  expected_output: Pattern catalog with recommendations
+  id: T3.2
+  name: Pattern Recognition
+  priority: medium

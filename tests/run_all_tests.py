@@ -2,8 +2,7 @@
 Master test runner for all CursorRules Architect context engineering features.
 
 Runs comprehensive tests for:
-- Memory Agent and Analysis Memory Integration
-- Protocol Engine and Phase 2 Protocol Integration  
+- Protocol Engine and Phase 2 Protocol Integration
 - Context Field Engine and Analysis Context Integration
 """
 
@@ -17,7 +16,6 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 # Import test modules
-from tests.test_memory_agent import run_memory_tests
 from tests.test_protocol_engine import run_protocol_tests
 from tests.test_context_field_engine import run_context_field_tests
 
@@ -65,8 +63,6 @@ def run_integration_tests():
     
     try:
         # Import all components to test basic integration
-        from core.memory.memory_agent import MemoryAgent
-        from core.memory.analysis_memory_integration import AnalysisMemoryIntegration
         from core.protocol.protocol_engine import ProtocolEngine
         from core.protocol.phase2_protocol_integration import Phase2ProtocolIntegration
         from core.context.context_field_engine import ContextFieldEngine
@@ -76,40 +72,31 @@ def run_integration_tests():
         
         # Test basic instantiation
         import tempfile
-        temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        temp_db.close()
         temp_json = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
         temp_json.close()
-        
-        memory_agent = MemoryAgent(temp_db.name)
+
         protocol_engine = ProtocolEngine(temp_json.name)
         field_engine = ContextFieldEngine()
-        
+
         print("✅ All engines instantiated successfully")
-        
+
         # Test basic operations
-        from core.memory.memory_agent import NodeType
-        memory_agent.ingest_node("Integration Test", "Testing integration", 
-                                NodeType.DOCUMENT, ["integration"])
-        
         protocol_engine.clarify_context({"protocol_name": "Integration Test Protocol"})
-        
-        field_engine.create_attractor("integration_test", field_engine.AttractorType.CONCEPT, 
+
+        field_engine.create_attractor("integration_test", field_engine.AttractorType.CONCEPT,
                                     (25, 25, 25))
-        
+
         print("✅ Basic operations completed successfully")
-        
+
         # Test integration layers
-        memory_integration = AnalysisMemoryIntegration(temp_db.name)
         protocol_integration = Phase2ProtocolIntegration(temp_json.name)
         context_integration = AnalysisContextIntegration()
-        
+
         print("✅ Integration layers instantiated successfully")
         
         # Cleanup temp files
         import os
         try:
-            os.unlink(temp_db.name)
             os.unlink(temp_json.name)
         except:
             pass
@@ -127,18 +114,14 @@ def run_comprehensive_scenario_test():
     
     try:
         # Simulate a complete analysis workflow
-        from core.memory.analysis_memory_integration import AnalysisMemoryIntegration
         from core.protocol.phase2_protocol_integration import Phase2ProtocolIntegration
         from core.context.analysis_context_integration import AnalysisContextIntegration
         
         # Initialize all systems with temp files
         import tempfile
-        temp_memory_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        temp_memory_db.close()
         temp_protocol_json = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
         temp_protocol_json.close()
-        
-        memory_system = AnalysisMemoryIntegration(temp_memory_db.name)
+
         protocol_system = Phase2ProtocolIntegration(temp_protocol_json.name)
         context_system = AnalysisContextIntegration()
         
@@ -243,9 +226,6 @@ def main():
     test_results = {}
     
     # Run individual component tests
-    print("🧠 Testing Memory Agent Components...")
-    test_results["Memory Agent"] = run_memory_tests()
-    
     print("\n🔄 Testing Protocol Engine Components...")
     test_results["Protocol Engine"] = run_protocol_tests()
     

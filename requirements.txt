@@ -1,12 +1,25 @@
-anthropic
-typer[all]
-rich
-textual
-pathlib
-pydantic
-beautifulsoup4
-lxml
-openai
-google-genai
-python-dotenv
-click
+# CursorRules Architect - Simplified Requirements
+# For development installation, use: pip install -e .
+
+# Core dependencies (install with pip install -e .)
+anthropic>=0.25.0
+openai>=1.30.0
+google-generativeai>=0.5.0
+typer[all]>=0.9.0
+rich>=13.0.0
+textual>=0.60.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+numpy>=1.24.0
+aiofiles>=23.0.0
+
+# Development dependencies (install with pip install -e .[dev])
+# pytest>=7.0.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.0.0
+# black>=23.0.0
+# isort>=5.12.0
+# flake8>=6.0.0
+# mypy>=1.5.0
+# pre-commit>=3.0.0
